@@ -11,7 +11,7 @@ import type {AuthResponse} from "@/types/auth/AuthResponse.ts";
 export const useAuthStore = defineStore('auth-store', {
     state: () => ({
         url: import.meta.env.VITE_API_URL,
-        userLogged: null as unknown as UserLogged
+        userLogged: null as UserLogged | null
     }),
     actions: {
         async register(user: UserRegister): Promise<ResponseAPI<string>> {

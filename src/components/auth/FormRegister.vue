@@ -39,12 +39,14 @@
 <script setup lang="ts">
 import z from 'zod'
 import {ref} from 'vue'
+import router from "@/router";
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import InputText from 'primevue/inputtext'
 import {useToast} from 'primevue/usetoast';
 import {Form, FormField} from '@primevue/forms'
 import {useAuthStore} from "@/stores/auth-store.ts";
+import type ResponseAPI from "@/utils/ResponseAPI.ts";
 
 const toast = useToast();
 const authStore = useAuthStore();
@@ -57,7 +59,7 @@ const RegisterRules = z.object({
   firstName: z.string().min(2).max(20)
 })
 
-const user = ref<import('@/types/UserRegister').UserRegister>({
+const user = ref<import('@/types/auth/UserRegister').UserRegister>({
   username: "",
   lastName: "",
   firstName: "",
@@ -65,7 +67,7 @@ const user = ref<import('@/types/UserRegister').UserRegister>({
   password: "",
 });
 
-const onFormSubmit = () => {
+const onFormSubmit = async () => {
   const validation = RegisterRules.safeParse(user.value);
 
   if (!validation.success) {
@@ -73,8 +75,15 @@ const onFormSubmit = () => {
     return;
   }
 
-  const result = authStore.register(user.value);
+  const result: ResponseAPI<string> = await authStore.register(user.value);
 
-  toast.add({detail: result});
+  if (result.isError) {
+    toast.add({detail: result.response});
+    return;
+  }
+
+  toast.add({detail: result.response});
+
+  await router.push({name: 'Login'});
 }
 </script>

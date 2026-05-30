@@ -1,20 +1,32 @@
 import axios from "axios";
 import {defineStore} from "pinia";
-import type {UserRegister} from "@/types/UserRegister.ts";
+import ResponseAPI from "@/utils/ResponseAPI.ts";
+import type {UserLogged} from "@/types/auth/UserLogged.ts";
+import type {UserRegister} from "@/types/auth/UserRegister.ts";
+import type {AuthResponse} from "@/types/auth/AuthResponse.ts";
 
 /**
  * @author andrewgo
  */
 export const useAuthStore = defineStore('auth-store', {
-    state: () => ({}),
+    state: () => ({
+        url: import.meta.env.VITE_API_URL,
+        userLogged: null as unknown as UserLogged
+    }),
     actions: {
-        async register(user: UserRegister): Promise<String> {
+        async register(user: UserRegister): Promise<ResponseAPI<string>> {
             try {
-                // TODO: passar URL para .env
-                await axios.post("http://localhost:8080/auth/register", user);
-                return "Usuário registrado com sucesso!";
-            } catch (error) {
-                return "Ocorreu um erro ao realizar o registro, tente novamente mais tarde!";
+                const {data} = await axios.post<AuthResponse>(
+                    `${this.url}/auth/register`, user
+                );
+
+                this.userLogged = data.user;
+
+                localStorage.setItem("token", data.token);
+
+                return new ResponseAPI(false, "Usuário registrado com sucesso!");
+            } catch (_) {
+                return new ResponseAPI(true, "Ocorreu um erro ao realizar o registro, tente novamente mais tarde!");
             }
         }
     },

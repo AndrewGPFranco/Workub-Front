@@ -3,41 +3,71 @@
       v-slot="$form"
       :resolver="resolver"
       :initial-values="initialValues"
+      :validate-on-value-update="false"
+      validate-on-blur
       @submit="onFormSubmit"
-      class="flex flex-col gap-4 w-full sm:w-56"
+      class="register-form"
   >
 
-    <FormField v-slot="$field" name="username" class="flex flex-col gap-1">
-      <InputText v-bind="$field.props" type="text" placeholder="Username"/>
+    <FormField v-slot="$field" name="firstName" class="form-field">
+      <label for="firstName">Nome</label>
+      <IconField>
+        <InputIcon class="pi pi-user"/>
+        <InputText id="firstName" v-bind="$field.props" type="text" placeholder="Seu nome" fluid/>
+      </IconField>
       <Message v-if="$field?.invalid" severity="error" size="small" variant="simple">{{ $field.error?.message }}
       </Message>
     </FormField>
 
-    <FormField v-slot="$field" name="email" class="flex flex-col gap-1">
-      <InputText v-bind="$field.props" type="email" placeholder="Email"/>
+    <FormField v-slot="$field" name="lastName" class="form-field">
+      <label for="lastName">Sobrenome</label>
+      <IconField>
+        <InputIcon class="pi pi-id-card"/>
+        <InputText id="lastName" v-bind="$field.props" type="text" placeholder="Seu sobrenome" fluid/>
+      </IconField>
       <Message v-if="$field?.invalid" severity="error" size="small" variant="simple">{{ $field.error?.message }}
       </Message>
     </FormField>
 
-    <FormField v-slot="$field" name="firstName" class="flex flex-col gap-1">
-      <InputText v-bind="$field.props" type="text" placeholder="First Name"/>
+    <FormField v-slot="$field" name="username" class="form-field">
+      <label for="username">Username</label>
+      <IconField>
+        <InputIcon class="pi pi-at"/>
+        <InputText id="username" v-bind="$field.props" type="text" placeholder="username" fluid/>
+      </IconField>
       <Message v-if="$field?.invalid" severity="error" size="small" variant="simple">{{ $field.error?.message }}
       </Message>
     </FormField>
 
-    <FormField v-slot="$field" name="lastName" class="flex flex-col gap-1">
-      <InputText v-bind="$field.props" type="text" placeholder="Last Name"/>
+    <FormField v-slot="$field" name="email" class="form-field">
+      <label for="email">Email</label>
+      <IconField>
+        <InputIcon class="pi pi-envelope"/>
+        <InputText id="email" v-bind="$field.props" type="email" placeholder="voce@empresa.com" fluid/>
+      </IconField>
       <Message v-if="$field?.invalid" severity="error" size="small" variant="simple">{{ $field.error?.message }}
       </Message>
     </FormField>
 
-    <FormField v-slot="$field" name="password" class="flex flex-col gap-1">
-      <InputText v-bind="$field.props" type="password" placeholder="Password"/>
+    <FormField v-slot="$field" name="password" class="form-field">
+      <label for="password">Senha</label>
+      <IconField>
+        <InputIcon class="pi pi-lock"/>
+        <InputText id="password" v-bind="$field.props" type="password" placeholder="Mínimo de 8 caracteres" fluid/>
+      </IconField>
       <Message v-if="$field?.invalid" severity="error" size="small" variant="simple">{{ $field.error?.message }}
       </Message>
     </FormField>
 
-    <Button type="submit" severity="secondary" label="Registrar" :disabled="!$form.valid || isSubmitting"/>
+    <Button
+        type="submit"
+        icon="pi pi-arrow-right"
+        icon-pos="right"
+        label="Criar conta"
+        :loading="isSubmitting"
+        :disabled="!$form.valid || isSubmitting"
+        class="submit-button"
+    />
 
   </Form>
 </template>
@@ -49,6 +79,8 @@ import router from "@/router";
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import InputText from 'primevue/inputtext'
+import IconField from 'primevue/iconfield'
+import InputIcon from 'primevue/inputicon'
 import {useToast} from 'primevue/usetoast';
 import {Form, FormField} from '@primevue/forms'
 import {useAuthStore} from "@/stores/auth-store.ts";
@@ -100,3 +132,75 @@ const onFormSubmit = async ({valid, values}: FormSubmitEvent) => {
   isSubmitting.value = false;
 }
 </script>
+
+<style scoped>
+.register-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.form-field:nth-of-type(3),
+.form-field:nth-of-type(4),
+.form-field:nth-of-type(5),
+.submit-button {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  color: #d9e4ff;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.form-field :deep(.p-inputtext) {
+  width: 100%;
+  min-height: 46px;
+  border-color: rgba(88, 111, 187, 0.44);
+  border-radius: 12px;
+  color: #f8fafc;
+  background: rgba(10, 16, 38, 0.86);
+}
+
+.form-field :deep(.p-inputtext:enabled:focus) {
+  border-color: #448dff;
+  box-shadow: 0 0 0 4px rgba(68, 141, 255, 0.16);
+}
+
+.form-field :deep(.p-inputicon) {
+  color: #7d8fc3;
+}
+
+.form-field :deep(.p-message-text) {
+  line-height: 1.35;
+}
+
+.submit-button {
+  min-height: 48px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #1d8cff);
+  font-weight: 800;
+  box-shadow: 0 16px 34px rgba(29, 140, 255, 0.24);
+}
+
+.submit-button:not(:disabled):hover {
+  background: linear-gradient(135deg, #6d28d9, #1276e6);
+}
+
+@media (max-width: 560px) {
+  .register-form {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+</style>

@@ -42,13 +42,18 @@ import {ref} from 'vue'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import InputText from 'primevue/inputtext'
+import {useToast} from 'primevue/usetoast';
 import {Form, FormField} from '@primevue/forms'
+import {useAuthStore} from "@/stores/auth-store.ts";
+
+const toast = useToast();
+const authStore = useAuthStore();
 
 const RegisterRules = z.object({
   email: z.email(),
+  password: z.string().min(8),
   username: z.string().min(2).max(30),
-  lastName: z.string().min(2).max(20),
-  password: z.string().min(8).max(20),
+  lastName: z.string().min(2).max(30),
   firstName: z.string().min(2).max(20)
 })
 
@@ -61,11 +66,15 @@ const user = ref<import('@/types/UserRegister').UserRegister>({
 });
 
 const onFormSubmit = () => {
-  const result = RegisterRules.safeParse(user.value);
+  const validation = RegisterRules.safeParse(user.value);
 
-  if (result.success)
+  if (!validation.success) {
     alert('Registro')
-  else
-    alert(result.error.message)
+    return;
+  }
+
+  const result = authStore.register(user.value);
+
+  toast.add({detail: result});
 }
 </script>

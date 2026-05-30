@@ -1,6 +1,7 @@
 import HomeView from '@/pages/HomeView.vue'
-import RegisterUserView from '@/pages/RegisterUserView.vue'
+import LoginUserView from '@/pages/LoginUserView.vue'
 import {createRouter, createWebHistory} from 'vue-router'
+import RegisterUserView from '@/pages/RegisterUserView.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -9,6 +10,14 @@ const router = createRouter({
             path: "/",
             component: HomeView,
             name: "Home"
+        },
+        {
+            path: "/auth/login",
+            component: LoginUserView,
+            name: "Login",
+            meta: {
+                guestOnly: true
+            }
         },
         {
             path: "/auth/register",

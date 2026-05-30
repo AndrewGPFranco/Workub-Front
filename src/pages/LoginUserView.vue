@@ -1,31 +1,31 @@
 <template>
-  <section class="register-page">
-    <div class="register-shell">
-      <aside class="register-aside" aria-label="Workhub">
+  <section class="login-page">
+    <div class="login-shell">
+      <aside class="login-aside" aria-label="Workhub">
         <img
             src="/banner-register.png"
             alt="Workhub, um hub completo para organizar, colaborar e entregar mais."
-            class="register-banner"
+            class="login-banner"
         >
       </aside>
 
-      <main class="register-card">
+      <main class="login-card">
         <RouterLink :to="{ name: 'Home' }" class="brand-link">
           <span class="brand-mark">W</span>
           <span>Workhub</span>
         </RouterLink>
 
         <div class="form-heading">
-          <p class="eyebrow">Cadastro</p>
-          <h2>Crie sua conta</h2>
-          <p>Depois do registro, você já entra autenticado no Workhub.</p>
+          <p class="eyebrow">Login</p>
+          <h2>Acesse sua conta</h2>
+          <p>Entre para continuar acompanhando suas tarefas, projetos e entregas.</p>
         </div>
 
-        <FormRegister/>
+        <FormLogin/>
 
         <p class="auth-switch">
-          Já tem uma conta?
-          <RouterLink :to="{ name: 'Login' }">Entrar</RouterLink>
+          Ainda não tem uma conta?
+          <RouterLink :to="{ name: 'User Register' }">Criar conta</RouterLink>
         </p>
       </main>
     </div>
@@ -33,11 +33,11 @@
 </template>
 
 <script setup lang="ts">
-import FormRegister from '@/components/auth/FormRegister.vue';
+import FormLogin from '@/components/auth/FormLogin.vue';
 </script>
 
 <style scoped>
-.register-page {
+.login-page {
   box-sizing: border-box;
   height: 100dvh;
   padding: 28px;
@@ -48,7 +48,7 @@ import FormRegister from '@/components/auth/FormRegister.vue';
   color: #f8fafc;
 }
 
-.register-shell {
+.login-shell {
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(420px, 0.72fr);
   max-width: 1240px;
@@ -61,14 +61,14 @@ import FormRegister from '@/components/auth/FormRegister.vue';
   box-shadow: 0 34px 110px rgba(0, 0, 0, 0.5);
 }
 
-.register-aside {
+.login-aside {
   position: relative;
   min-height: 0;
   overflow: hidden;
   background: #040716;
 }
 
-.register-aside::after {
+.login-aside::after {
   position: absolute;
   inset: 0;
   content: "";
@@ -77,7 +77,7 @@ import FormRegister from '@/components/auth/FormRegister.vue';
   linear-gradient(0deg, rgba(5, 8, 23, 0.1), transparent 28%);
 }
 
-.register-banner {
+.login-banner {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -120,15 +120,20 @@ import FormRegister from '@/components/auth/FormRegister.vue';
 
 .form-heading h2 {
   margin: 0;
+  color: #ffffff;
+  font-size: 2.15rem;
+  line-height: 1.08;
   letter-spacing: 0;
 }
 
 .form-heading p:last-child {
+  max-width: 390px;
   margin: 18px 0 0;
+  color: #a7b0c7;
   line-height: 1.65;
 }
 
-.register-card {
+.login-card {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -144,17 +149,6 @@ import FormRegister from '@/components/auth/FormRegister.vue';
 
 .form-heading .eyebrow {
   color: #43a3ff;
-}
-
-.form-heading h2 {
-  color: #ffffff;
-  font-size: 2.15rem;
-  line-height: 1.08;
-}
-
-.form-heading p:last-child {
-  max-width: 390px;
-  color: #a7b0c7;
 }
 
 .auth-switch {
@@ -174,42 +168,42 @@ import FormRegister from '@/components/auth/FormRegister.vue';
 }
 
 @media (max-width: 940px) {
-  .register-page {
+  .login-page {
     padding: 18px;
   }
 
-  .register-shell {
+  .login-shell {
     grid-template-columns: 1fr;
     overflow: auto;
   }
 
-  .register-aside {
+  .login-aside {
     height: min(46dvh, 430px);
     flex: 0 0 auto;
   }
 
-  .register-card {
+  .login-card {
     padding: 34px 24px;
   }
 }
 
 @media (max-width: 560px) {
-  .register-page {
+  .login-page {
     padding: 0;
     background: #060a19;
   }
 
-  .register-shell {
+  .login-shell {
     border: 0;
     border-radius: 0;
     box-shadow: none;
   }
 
-  .register-aside {
+  .login-aside {
     height: 260px;
   }
 
-  .register-card {
+  .login-card {
     padding: 30px 20px 36px;
   }
 

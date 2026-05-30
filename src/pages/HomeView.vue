@@ -1,5 +1,6 @@
 <template>
-  <RouterLink :to="{name: 'User Register', }">Registrar</RouterLink>
+  <RouterLink :to="{name: 'Login'}">Entrar</RouterLink>
+  <RouterLink :to="{name: 'User Register'}">Registrar</RouterLink>
 
   <Button @click="logout" label="Deslogar"/>
 </template>
@@ -7,10 +8,13 @@
 <script lang="ts" setup>
 import router from "@/router";
 import Button from 'primevue/button';
+import {useAuthStore} from "@/stores/auth-store.ts";
+
+const authStore = useAuthStore();
 
 const logout = async () => {
-  localStorage.removeItem('token');
+  authStore.logout();
 
-  await router.push({name: 'User Register'});
+  await router.push({name: 'Login'});
 }
 </script>

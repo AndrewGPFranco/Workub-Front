@@ -132,7 +132,11 @@
           </div>
 
           <footer class="pagination">
-            <span>Folha {{ demandStore.currentPage + 1 }}</span>
+            <span>
+              Folha {{ demandStore.currentPage + 1 }}
+              <template v-if="demandStore.totalPages"> de {{ demandStore.totalPages }}</template>
+              · {{ demandStore.totalElements }} itens
+            </span>
             <div>
               <Button
                   icon="pi pi-arrow-left"

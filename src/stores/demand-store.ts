@@ -2,9 +2,9 @@ import axios from 'axios';
 import {defineStore} from 'pinia';
 import ResponseAPI from '@/utils/ResponseAPI.ts';
 import {getApiErrorMessage} from '@/utils/api-error.ts';
+import type {PageResponse} from '@/types/http/PageResponse.ts';
 import type {Demand, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
 
-const PAGE_SIZE = 10;
 const TOKEN_STORAGE_KEY = 'token';
 
 export const useDemandStore = defineStore('demand-store', {
@@ -12,6 +12,8 @@ export const useDemandStore = defineStore('demand-store', {
         url: import.meta.env.VITE_API_URL,
         demands: [] as Demand[],
         currentPage: 0,
+        totalPages: 0,
+        totalElements: 0,
         isLoading: false,
         canGoForward: false,
     }),
@@ -25,7 +27,7 @@ export const useDemandStore = defineStore('demand-store', {
             this.isLoading = true;
 
             try {
-                const {data} = await axios.get<ResponseAPI<Demand[]>>(
+                const {data} = await axios.get<ResponseAPI<PageResponse<Demand>>>(
                     `${this.url}/demands/by-user`,
                     {
                         params: {page},
@@ -33,11 +35,13 @@ export const useDemandStore = defineStore('demand-store', {
                     },
                 );
 
-                this.demands = data.data;
-                this.currentPage = page;
-                this.canGoForward = data.data.length === PAGE_SIZE;
+                this.demands = data.data.content;
+                this.currentPage = data.data.page;
+                this.totalPages = data.data.totalPages;
+                this.totalElements = data.data.totalElements;
+                this.canGoForward = data.data.hasNext;
 
-                return new ResponseAPI(data.httpStatusCode, data.data);
+                return new ResponseAPI(data.httpStatusCode, data.data.content);
             } catch (_) {
                 return new ResponseAPI(500, []);
             } finally {

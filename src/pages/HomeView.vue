@@ -1,20 +1,13 @@
 <template>
-  <RouterLink :to="{name: 'Login'}">Entrar</RouterLink>
-  <RouterLink :to="{name: 'User Register'}">Registrar</RouterLink>
-
-  <Button @click="logout" label="Deslogar"/>
+  <div/>
 </template>
 
 <script lang="ts" setup>
-import router from "@/router";
-import Button from 'primevue/button';
-import {useAuthStore} from "@/stores/auth-store.ts";
+import {onMounted} from 'vue';
+import router from '@/router';
 
-const authStore = useAuthStore();
-
-const logout = async () => {
-  authStore.logout();
-
-  await router.push({name: 'Login'});
-}
+onMounted(() => {
+  const destination = localStorage.getItem('token') ? 'Demands' : 'Login';
+  router.replace({name: destination});
+});
 </script>

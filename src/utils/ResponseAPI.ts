@@ -1,27 +1,17 @@
 class ResponseAPI<RESPONSE> {
 
-    private _isError: boolean;
-    private _response: RESPONSE;
-
-    constructor(isError: boolean, response: RESPONSE) {
-        this._isError = isError;
-        this._response = response;
+    constructor(
+        public httpStatusCode: number,
+        public data: RESPONSE,
+    ) {
     }
 
     get isError(): boolean {
-        return this._isError;
-    }
-
-    set isError(value: boolean) {
-        this._isError = value;
+        return this.httpStatusCode >= 400;
     }
 
     get response(): RESPONSE {
-        return this._response;
-    }
-
-    set response(value: RESPONSE) {
-        this._response = value;
+        return this.data;
     }
 }
 

@@ -52,9 +52,9 @@ export const useAuthStore = defineStore('auth-store', {
 
                 this.saveSession(data);
 
-                return new ResponseAPI(false, "Usuário registrado com sucesso!");
+                return new ResponseAPI(200, "Usuário registrado com sucesso!");
             } catch (_) {
-                return new ResponseAPI(true, "Ocorreu um erro ao realizar o registro, tente novamente mais tarde!");
+                return new ResponseAPI(500, "Ocorreu um erro ao realizar o registro, tente novamente mais tarde!");
             }
         },
         async login(user: UserLogin): Promise<ResponseAPI<string>> {
@@ -65,9 +65,9 @@ export const useAuthStore = defineStore('auth-store', {
 
                 this.saveSession(data);
 
-                return new ResponseAPI(false, "Login realizado com sucesso!");
+                return new ResponseAPI(200, "Login realizado com sucesso!");
             } catch (_) {
-                return new ResponseAPI(true, "Email ou senha inválidos.");
+                return new ResponseAPI(401, "Email ou senha inválidos.");
             }
         }
     },

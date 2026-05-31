@@ -88,6 +88,7 @@ import type ResponseAPI from "@/utils/ResponseAPI.ts";
 import {zodResolver} from '@primevue/forms/resolvers/zod'
 import type {FormSubmitEvent} from '@primevue/forms/form'
 import type {UserRegister} from '@/types/auth/UserRegister'
+import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 
 const toast = useToast();
 const authStore = useAuthStore();
@@ -120,12 +121,12 @@ const onFormSubmit = async ({valid, values}: FormSubmitEvent) => {
   const result: ResponseAPI<string> = await authStore.register(values as UserRegister);
 
   if (result.isError) {
-    toast.add({detail: result.response});
+    showErrorToast(toast, result.response);
     isSubmitting.value = false;
     return;
   }
 
-  toast.add({detail: result.response});
+  showSuccessToast(toast, result.response);
 
   await router.push({name: 'Home'});
 

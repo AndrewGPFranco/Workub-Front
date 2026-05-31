@@ -309,6 +309,7 @@ import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
 import {useDemandStore} from '@/stores/demand-store.ts';
 import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
+import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 
 const toast = useToast();
 const isSubmitting = ref(false);
@@ -370,7 +371,7 @@ const loadDemands = async (page = 0) => {
   const result = await demandStore.fetchDemands(page);
 
   if (result.isError) {
-    toast.add({severity: 'error', detail: 'Não foi possível carregar suas demandas.', life: 3500});
+    showErrorToast(toast, 'Não foi possível carregar suas demandas.');
   }
 };
 
@@ -384,13 +385,13 @@ const saveDemand = async () => {
       : await demandStore.registerDemand({...form});
 
   if (result.isError) {
-    toast.add({severity: 'error', detail: result.response, life: 3500});
+    showErrorToast(toast, result.response);
     isSubmitting.value = false;
     return;
   }
 
   cancelEditing();
-  toast.add({severity: 'success', detail: result.response, life: 3500});
+  showSuccessToast(toast, result.response);
   await loadDemands(demandStore.currentPage);
   isSubmitting.value = false;
 };
@@ -446,7 +447,7 @@ const deleteDemand = async () => {
   const result = await demandStore.deleteDemand(demand.id);
 
   if (result.isError) {
-    toast.add({severity: 'error', detail: result.response, life: 3500});
+    showErrorToast(toast, result.response);
     isDeleting.value = false;
     return;
   }
@@ -458,7 +459,7 @@ const deleteDemand = async () => {
       ? demandStore.currentPage - 1
       : demandStore.currentPage;
 
-  toast.add({severity: 'success', detail: result.response, life: 3500});
+  showSuccessToast(toast, result.response);
   await loadDemands(page);
   isDeleting.value = false;
   closeDeleteDialog();

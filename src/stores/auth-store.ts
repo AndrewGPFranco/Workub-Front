@@ -1,6 +1,7 @@
 import axios from "axios";
 import {defineStore} from "pinia";
 import ResponseAPI from "@/utils/ResponseAPI.ts";
+import {getApiErrorMessage} from "@/utils/api-error.ts";
 import type {UserLogin} from "@/types/auth/UserLogin.ts";
 import type {UserLogged} from "@/types/auth/UserLogged.ts";
 import type {UserRegister} from "@/types/auth/UserRegister.ts";
@@ -53,8 +54,8 @@ export const useAuthStore = defineStore('auth-store', {
                 this.saveSession(data);
 
                 return new ResponseAPI(200, "Usuário registrado com sucesso!");
-            } catch (_) {
-                return new ResponseAPI(500, "Ocorreu um erro ao realizar o registro, tente novamente mais tarde!");
+            } catch (error) {
+                return new ResponseAPI(500, getApiErrorMessage(error, "Ocorreu um erro ao realizar o registro, tente novamente mais tarde!"));
             }
         },
         async login(user: UserLogin): Promise<ResponseAPI<string>> {
@@ -66,8 +67,8 @@ export const useAuthStore = defineStore('auth-store', {
                 this.saveSession(data);
 
                 return new ResponseAPI(200, "Login realizado com sucesso!");
-            } catch (_) {
-                return new ResponseAPI(401, "Email ou senha inválidos.");
+            } catch (error) {
+                return new ResponseAPI(401, getApiErrorMessage(error, "Email ou senha inválidos."));
             }
         }
     },

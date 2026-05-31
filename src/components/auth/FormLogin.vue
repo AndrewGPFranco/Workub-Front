@@ -56,6 +56,7 @@ import {useAuthStore} from "@/stores/auth-store.ts";
 import type ResponseAPI from "@/utils/ResponseAPI.ts";
 import type {FormSubmitEvent} from '@primevue/forms/form'
 import type {UserLogin} from '@/types/auth/UserLogin'
+import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 
 const toast = useToast();
 const authStore = useAuthStore();
@@ -82,12 +83,12 @@ const onFormSubmit = async ({valid, values}: FormSubmitEvent) => {
   const result: ResponseAPI<string> = await authStore.login(values as UserLogin);
 
   if (result.isError) {
-    toast.add({severity: 'error', detail: result.response});
+    showErrorToast(toast, result.response);
     isSubmitting.value = false;
     return;
   }
 
-  toast.add({severity: 'success', detail: result.response});
+  showSuccessToast(toast, result.response);
 
   await router.push({name: 'Home'});
 

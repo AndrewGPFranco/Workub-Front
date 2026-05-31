@@ -11,7 +11,7 @@
 
       <main class="register-card">
         <RouterLink :to="{ name: 'Home' }" class="brand-link">
-          <img src="/logo-workhub.png" alt="" class="brand-mark">
+          <img src="/favicon.png" alt="" class="brand-mark">
           <span>Workhub</span>
         </RouterLink>
 

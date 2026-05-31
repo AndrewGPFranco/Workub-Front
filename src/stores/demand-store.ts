@@ -69,5 +69,17 @@ export const useDemandStore = defineStore('demand-store', {
                 return new ResponseAPI(500, 'Não foi possível editar a demanda.');
             }
         },
+        async deleteDemand(id: string): Promise<ResponseAPI<string>> {
+            try {
+                const {data} = await axios.delete<ResponseAPI<string>>(
+                    `${this.url}/demands/delete/${id}`,
+                    {headers: this.authorizationHeader()},
+                );
+
+                return new ResponseAPI(data.httpStatusCode, data.data);
+            } catch (_) {
+                return new ResponseAPI(500, 'Não foi possível excluir a demanda.');
+            }
+        },
     },
 });

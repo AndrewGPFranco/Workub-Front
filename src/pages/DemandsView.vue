@@ -3,7 +3,7 @@
     <header class="site-header">
       <nav class="navbar" aria-label="Navegação principal">
         <RouterLink :to="{name: 'Demands'}" class="brand" aria-label="Workhub">
-          <img src="/logo-workhub.png" alt="" class="brand-logo">
+          <img src="/favicon.png" alt="" class="brand-logo">
           <span class="brand-copy">Work<span>hub</span></span>
         </RouterLink>
 
@@ -119,6 +119,14 @@
                   {{ statusLabels[demand.status] }}
                 </span>
                 <Button icon="pi pi-pencil" text rounded aria-label="Editar demanda" @click="startEditing(demand)"/>
+                <Button
+                    icon="pi pi-trash"
+                    text
+                    rounded
+                    severity="danger"
+                    aria-label="Excluir demanda"
+                    @click="confirmDeletion(demand)"
+                />
               </div>
             </article>
           </div>
@@ -225,7 +233,7 @@
 
     <footer class="site-footer">
       <div class="footer-brand">
-        <img src="/logo-workhub.png" alt="" class="brand-logo small">
+        <img src="/favicon.png" alt="" class="brand-logo small">
         <div>
           <strong>workhub</strong>
           <span>Seu registro diário de entregas.</span>
@@ -234,11 +242,64 @@
       <p>Organize o presente. Documente o que avançou.</p>
       <a href="#page-top">Voltar ao topo <i class="pi pi-arrow-up"/></a>
     </footer>
+
+    <Teleport to="body">
+      <Transition name="delete-modal">
+        <div
+            v-if="isDeleteDialogVisible"
+            class="delete-modal-backdrop"
+            role="presentation"
+            @click.self="closeDeleteDialog"
+        >
+          <section
+              ref="deleteModal"
+              class="delete-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-modal-title"
+              aria-describedby="delete-modal-description"
+              tabindex="-1"
+          >
+            <header class="delete-modal-header">
+              <div>
+                <p class="kicker">Ação permanente</p>
+                <h2 id="delete-modal-title">Remover demanda</h2>
+              </div>
+              <button class="delete-modal-close" type="button" aria-label="Fechar" :disabled="isDeleting"
+                      @click="closeDeleteDialog">
+                <i class="pi pi-times"/>
+              </button>
+            </header>
+
+            <div class="delete-modal-content">
+              <span class="delete-modal-icon"><i class="pi pi-trash"/></span>
+              <div>
+                <strong>Retirar este item da fila?</strong>
+                <p id="delete-modal-description">
+                  A demanda <b>{{ demandToDelete?.title }}</b> será removida permanentemente.
+                  Esta ação não poderá ser desfeita.
+                </p>
+              </div>
+            </div>
+
+            <footer class="delete-modal-footer">
+              <button class="modal-button secondary" type="button" :disabled="isDeleting" @click="closeDeleteDialog">
+                Manter demanda
+              </button>
+              <button class="modal-button destructive" type="button" :disabled="isDeleting" @click="deleteDemand">
+                <i :class="isDeleting ? 'pi pi-spin pi-spinner' : 'pi pi-trash'"/>
+                {{ isDeleting ? 'Removendo...' : 'Remover demanda' }}
+              </button>
+            </footer>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, reactive, ref} from 'vue';
+import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref} from 'vue';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
@@ -251,6 +312,10 @@ import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} f
 
 const toast = useToast();
 const isSubmitting = ref(false);
+const isDeleting = ref(false);
+const isDeleteDialogVisible = ref(false);
+const demandToDelete = ref<Demand | null>(null);
+const deleteModal = ref<HTMLElement | null>(null);
 const authStore = useAuthStore();
 const demandStore = useDemandStore();
 const formCard = ref<HTMLElement | null>(null);
@@ -357,6 +422,53 @@ const cancelEditing = () => {
   Object.assign(form, emptyForm());
 };
 
+const confirmDeletion = async (demand: Demand) => {
+  demandToDelete.value = demand;
+  isDeleteDialogVisible.value = true;
+  await nextTick();
+  deleteModal.value?.focus();
+};
+
+const closeDeleteDialog = () => {
+  if (isDeleting.value)
+    return;
+
+  isDeleteDialogVisible.value = false;
+  demandToDelete.value = null;
+};
+
+const deleteDemand = async () => {
+  const demand = demandToDelete.value;
+  if (!demand || isDeleting.value)
+    return;
+
+  isDeleting.value = true;
+  const result = await demandStore.deleteDemand(demand.id);
+
+  if (result.isError) {
+    toast.add({severity: 'error', detail: result.response, life: 3500});
+    isDeleting.value = false;
+    return;
+  }
+
+  if (editingDemandId.value === demand.id)
+    cancelEditing();
+
+  const page = demandStore.demands.length === 1 && demandStore.currentPage > 0
+      ? demandStore.currentPage - 1
+      : demandStore.currentPage;
+
+  toast.add({severity: 'success', detail: result.response, life: 3500});
+  await loadDemands(page);
+  isDeleting.value = false;
+  closeDeleteDialog();
+};
+
+const closeDeleteDialogOnEscape = (event: KeyboardEvent) => {
+  if (event.key === 'Escape')
+    closeDeleteDialog();
+};
+
 const formatDeadline = (deadline: string | null) => {
   if (!deadline)
     return 'Sem prazo definido';
@@ -375,7 +487,12 @@ const logout = async () => {
   await router.push({name: 'Login'});
 };
 
-onMounted(() => loadDemands());
+onMounted(() => {
+  loadDemands();
+  window.addEventListener('keydown', closeDeleteDialogOnEscape);
+});
+
+onBeforeUnmount(() => window.removeEventListener('keydown', closeDeleteDialogOnEscape));
 </script>
 
 <style scoped>
@@ -989,6 +1106,156 @@ h2 {
   color: #d8f06d;
   font-weight: 800;
   text-decoration: none;
+}
+
+.delete-modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: min(18vh, 150px) 18px 24px;
+  background: rgba(18, 56, 46, 0.48);
+  backdrop-filter: blur(2px);
+}
+
+.delete-modal {
+  width: min(100%, 500px);
+  border: 1px solid #d7d9d3;
+  border-radius: 4px;
+  overflow: hidden;
+  outline: 0;
+  background: #fbfbf7;
+  box-shadow: 0 24px 55px rgba(23, 62, 50, 0.22);
+}
+
+.delete-modal-header, .delete-modal-content, .delete-modal-footer {
+  display: flex;
+}
+
+.delete-modal-header {
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 15px;
+  border-bottom: 1px solid #e1e3de;
+}
+
+.delete-modal-header h2 {
+  margin-top: 4px;
+  font-size: 1.45rem;
+}
+
+.delete-modal-close {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #789087;
+  background: transparent;
+  cursor: pointer;
+}
+
+.delete-modal-close:not(:disabled):hover {
+  color: #173e32;
+  background: #eef1eb;
+}
+
+.delete-modal-content {
+  gap: 14px;
+  align-items: flex-start;
+  padding: 22px;
+}
+
+.delete-modal-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(239, 119, 76, 0.28);
+  border-radius: 50%;
+  color: #c45436;
+  background: #fff2ea;
+}
+
+.delete-modal-content strong {
+  color: #213b33;
+  font-family: Georgia, serif;
+  font-size: 1.02rem;
+  letter-spacing: -0.02em;
+}
+
+.delete-modal-content p {
+  margin-top: 7px;
+  color: #748078;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.delete-modal-footer {
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid #e1e3de;
+  background: #f6f6f1;
+}
+
+.modal-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 13px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.modal-button:disabled, .delete-modal-close:disabled {
+  cursor: wait;
+  opacity: 0.66;
+}
+
+.modal-button.secondary {
+  color: #6c7e77;
+  background: transparent;
+}
+
+.modal-button.secondary:not(:disabled):hover {
+  color: #173e32;
+  background: #eaeee8;
+}
+
+.modal-button.destructive {
+  border-color: #c45436;
+  color: #ffffff;
+  background: #c45436;
+}
+
+.modal-button.destructive:not(:disabled):hover {
+  border-color: #aa432a;
+  background: #aa432a;
+}
+
+.delete-modal-enter-active, .delete-modal-leave-active {
+  transition: opacity 160ms ease;
+}
+
+.delete-modal-enter-active .delete-modal, .delete-modal-leave-active .delete-modal {
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.delete-modal-enter-from, .delete-modal-leave-to {
+  opacity: 0;
+}
+
+.delete-modal-enter-from .delete-modal, .delete-modal-leave-to .delete-modal {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 @media (max-width: 980px) {

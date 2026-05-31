@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {defineStore} from 'pinia';
-import type {Demand, RegisterDemand} from '@/types/demands/Demand.ts';
 import ResponseAPI from '@/utils/ResponseAPI.ts';
+import type {Demand, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
 
 const PAGE_SIZE = 10;
 const TOKEN_STORAGE_KEY = 'token';
@@ -54,6 +54,19 @@ export const useDemandStore = defineStore('demand-store', {
                 return new ResponseAPI(data.httpStatusCode, data.data);
             } catch (_) {
                 return new ResponseAPI(500, 'Não foi possível registrar a demanda.');
+            }
+        },
+        async editDemand(id: string, demand: EditDemand): Promise<ResponseAPI<string>> {
+            try {
+                const {data} = await axios.patch<ResponseAPI<string>>(
+                    `${this.url}/demands/edit/${id}`,
+                    demand,
+                    {headers: this.authorizationHeader()},
+                );
+
+                return new ResponseAPI(data.httpStatusCode, data.data);
+            } catch (_) {
+                return new ResponseAPI(500, 'Não foi possível editar a demanda.');
             }
         },
     },

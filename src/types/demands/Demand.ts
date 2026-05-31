@@ -9,9 +9,18 @@ export interface Demand {
     deadline: string | null;
     status: DemandStatus;
     priority: DemandPriority;
-    observationToReview?: string | null;
+    observationsToReview?: string | null;
     createdAt: string;
     updatedAt: string | null;
+}
+
+export interface EditDemand {
+    title: string;
+    description: string;
+    deadline: string | null;
+    status: DemandStatus;
+    priority: DemandPriority;
+    observationsToReview: string | null;
 }
 
 export interface RegisterDemand {

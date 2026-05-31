@@ -1,7 +1,10 @@
-<script setup lang="ts"></script>
-
 <template>
-  <h1>Bem vindo ao Workhub</h1>
+  <main>
+    <RouterView />
+    <Toast />
+  </main>
 </template>
 
-<style scoped></style>
+<script setup lang="ts">
+import Toast from 'primevue/toast'
+</script>

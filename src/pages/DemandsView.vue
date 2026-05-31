@@ -3,8 +3,8 @@
     <header class="site-header">
       <nav class="navbar" aria-label="Navegação principal">
         <RouterLink :to="{name: 'Demands'}" class="brand" aria-label="Workhub">
-          <span class="brand-mark">W</span>
-          <span class="brand-copy">work<span>hub</span></span>
+          <img src="/logo-workhub.png" alt="" class="brand-logo">
+          <span class="brand-copy">Work<span>hub</span></span>
         </RouterLink>
 
         <div class="navbar-center">
@@ -225,7 +225,7 @@
 
     <footer class="site-footer">
       <div class="footer-brand">
-        <span class="brand-mark small">W</span>
+        <img src="/logo-workhub.png" alt="" class="brand-logo small">
         <div>
           <strong>workhub</strong>
           <span>Seu registro diário de entregas.</span>
@@ -427,25 +427,18 @@ onMounted(() => loadDemands());
   text-decoration: none;
 }
 
-.brand-mark {
-  display: grid;
+.brand-logo {
   width: 50px;
   height: 50px;
-  place-items: center;
   border-radius: 15px 15px 15px 5px;
-  color: #d9ff68;
-  background: #0e4938;
-  font-family: Georgia, serif;
-  font-size: 1.35rem;
-  font-style: italic;
-  box-shadow: inset 0 0 0 1px rgba(217, 255, 104, 0.18);
+  object-fit: cover;
+  box-shadow: 0 5px 13px rgba(32, 43, 77, 0.2);
 }
 
-.brand-mark.small {
+.brand-logo.small {
   width: 38px;
   height: 38px;
   border-radius: 11px 11px 11px 4px;
-  font-size: 1rem;
 }
 
 .brand-copy {
@@ -1019,7 +1012,7 @@ h2 {
     border-radius: 18px;
   }
 
-  .brand-mark {
+  .brand-logo {
     width: 42px;
     height: 42px;
   }

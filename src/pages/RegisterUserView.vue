@@ -11,7 +11,7 @@
 
       <main class="register-card">
         <RouterLink :to="{ name: 'Home' }" class="brand-link">
-          <span class="brand-mark">W</span>
+          <img src="/logo-workhub.png" alt="" class="brand-mark">
           <span>Workhub</span>
         </RouterLink>
 
@@ -98,13 +98,10 @@ import FormRegister from '@/components/auth/FormRegister.vue';
 }
 
 .brand-mark {
-  display: grid;
-  place-items: center;
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #7c3aed, #1d8cff);
-  color: #ffffff;
+  object-fit: cover;
   box-shadow: 0 16px 34px rgba(29, 140, 255, 0.24);
 }
 

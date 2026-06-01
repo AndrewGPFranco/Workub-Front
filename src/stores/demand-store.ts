@@ -4,7 +4,7 @@ import ResponseAPI from '@/utils/ResponseAPI.ts';
 import {getApiErrorMessage} from '@/utils/api-error.ts';
 import {translate} from '@/composables/use-language.ts';
 import type {PageResponse} from '@/types/http/PageResponse.ts';
-import type {Demand, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
+import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
 
 const TOKEN_STORAGE_KEY = 'token';
 
@@ -17,6 +17,8 @@ export const useDemandStore = defineStore('demand-store', {
         totalElements: 0,
         isLoading: false,
         canGoForward: false,
+        statusFilter: null as DemandStatus | null,
+        priorityFilter: null as DemandPriority | null,
     }),
     actions: {
         authorizationHeader() {
@@ -31,7 +33,11 @@ export const useDemandStore = defineStore('demand-store', {
                 const {data} = await axios.get<ResponseAPI<PageResponse<Demand>>>(
                     `${this.url}/demands/by-user`,
                     {
-                        params: {page},
+                        params: {
+                            page,
+                            ...(this.statusFilter ? {status: this.statusFilter} : {}),
+                            ...(this.priorityFilter ? {priority: this.priorityFilter} : {}),
+                        },
                         headers: this.authorizationHeader(),
                     },
                 );

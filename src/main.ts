@@ -1,6 +1,6 @@
-import { createApp } from 'vue'
+import {createApp} from 'vue'
 import 'primeicons/primeicons.css'
-import { createPinia } from 'pinia'
+import {createPinia} from 'pinia'
 import PrimeVue from 'primevue/config'
 import Aura from '@primeuix/themes/aura'
 import ToastService from 'primevue/toastservice';
@@ -8,6 +8,11 @@ import ToastService from 'primevue/toastservice';
 import App from './App.vue'
 import router from './router'
 import {useAuthStore} from "@/stores/auth-store.ts";
+import {initializeTheme} from '@/composables/use-theme.ts';
+import {initializeLanguage} from '@/composables/use-language.ts';
+
+initializeTheme();
+initializeLanguage();
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -16,9 +21,12 @@ app.use(pinia)
 app.use(router)
 app.use(ToastService);
 app.use(PrimeVue, {
-  theme: {
-    preset: Aura,
-  },
+    theme: {
+        preset: Aura,
+        options: {
+            darkModeSelector: '.app-dark',
+        },
+    },
 })
 
 useAuthStore().initializeSession();

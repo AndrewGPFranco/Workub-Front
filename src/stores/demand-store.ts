@@ -2,6 +2,7 @@ import axios from 'axios';
 import {defineStore} from 'pinia';
 import ResponseAPI from '@/utils/ResponseAPI.ts';
 import {getApiErrorMessage} from '@/utils/api-error.ts';
+import {translate} from '@/composables/use-language.ts';
 import type {PageResponse} from '@/types/http/PageResponse.ts';
 import type {Demand, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
 
@@ -58,7 +59,7 @@ export const useDemandStore = defineStore('demand-store', {
 
                 return new ResponseAPI(data.httpStatusCode, data.data);
             } catch (error) {
-                return new ResponseAPI(500, getApiErrorMessage(error, 'Não foi possível registrar a demanda.'));
+                return new ResponseAPI(500, getApiErrorMessage(error, translate('demands.registerError')));
             }
         },
         async editDemand(id: string, demand: EditDemand): Promise<ResponseAPI<string>> {
@@ -71,7 +72,7 @@ export const useDemandStore = defineStore('demand-store', {
 
                 return new ResponseAPI(data.httpStatusCode, data.data);
             } catch (error) {
-                return new ResponseAPI(500, getApiErrorMessage(error, 'Não foi possível editar a demanda.'));
+                return new ResponseAPI(500, getApiErrorMessage(error, translate('demands.editError')));
             }
         },
         async deleteDemand(id: string): Promise<ResponseAPI<string>> {
@@ -83,7 +84,7 @@ export const useDemandStore = defineStore('demand-store', {
 
                 return new ResponseAPI(data.httpStatusCode, data.data);
             } catch (error) {
-                return new ResponseAPI(500, getApiErrorMessage(error, 'Não foi possível excluir a demanda.'));
+                return new ResponseAPI(500, getApiErrorMessage(error, translate('demands.deleteError')));
             }
         },
     },

@@ -61,4 +61,18 @@ import Toast from 'primevue/toast'
 .p-toast-close-button {
   color: #789087;
 }
+
+.app-dark .p-toast-message {
+  border-color: rgba(214, 220, 244, 0.16);
+  background: #171b2b;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+}
+
+.app-dark .p-toast-summary {
+  color: #f7f5ef;
+}
+
+.app-dark .p-toast-detail {
+  color: #aab5c9;
+}
 </style>

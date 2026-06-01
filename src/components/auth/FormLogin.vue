@@ -9,20 +9,21 @@
       class="login-form"
   >
     <FormField v-slot="$field" name="email" class="form-field">
-      <label for="login-email">Email</label>
+      <label for="login-email">{{ t('auth.email') }}</label>
       <IconField>
         <InputIcon class="pi pi-envelope"/>
-        <InputText id="login-email" v-bind="$field.props" type="email" placeholder="voce@empresa.com" fluid/>
+        <InputText id="login-email" v-bind="$field.props" type="email" :placeholder="t('auth.emailPlaceholder')" fluid/>
       </IconField>
       <Message v-if="$field?.invalid" severity="error" size="small" variant="simple">{{ $field.error?.message }}
       </Message>
     </FormField>
 
     <FormField v-slot="$field" name="password" class="form-field">
-      <label for="login-password">Senha</label>
+      <label for="login-password">{{ t('auth.password') }}</label>
       <IconField>
         <InputIcon class="pi pi-lock"/>
-        <InputText id="login-password" v-bind="$field.props" type="password" placeholder="Sua senha" fluid/>
+        <InputText id="login-password" v-bind="$field.props" type="password"
+                   :placeholder="t('auth.passwordPlaceholder')" fluid/>
       </IconField>
       <Message v-if="$field?.invalid" severity="error" size="small" variant="simple">{{ $field.error?.message }}
       </Message>
@@ -32,7 +33,7 @@
         type="submit"
         icon="pi pi-arrow-right"
         icon-pos="right"
-        label="Entrar"
+        :label="t('auth.login.submit')"
         :loading="isSubmitting"
         :disabled="!$form.valid || isSubmitting"
         class="submit-button"
@@ -42,7 +43,7 @@
 
 <script setup lang="ts">
 import z from 'zod'
-import {ref} from 'vue'
+import {computed, ref} from 'vue'
 import router from "@/router";
 import Button from 'primevue/button'
 import Message from 'primevue/message'
@@ -57,17 +58,19 @@ import type ResponseAPI from "@/utils/ResponseAPI.ts";
 import type {FormSubmitEvent} from '@primevue/forms/form'
 import type {UserLogin} from '@/types/auth/UserLogin'
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
+import {useLanguage} from '@/composables/use-language.ts';
 
 const toast = useToast();
 const authStore = useAuthStore();
 const isSubmitting = ref(false);
+const {t} = useLanguage();
 
-const LoginRules = z.object({
-  email: z.email('Informe um email válido.'),
-  password: z.string().min(1, 'Informe sua senha.')
-})
+const LoginRules = computed(() => z.object({
+  email: z.email(t('validation.email')),
+  password: z.string().min(1, t('validation.passwordRequired'))
+}));
 
-const resolver = zodResolver(LoginRules);
+const resolver = computed(() => zodResolver(LoginRules.value));
 
 const initialValues: UserLogin = {
   email: "",
@@ -150,5 +153,19 @@ const onFormSubmit = async ({valid, values}: FormSubmitEvent) => {
 
 .submit-button:not(:disabled):hover {
   background: linear-gradient(135deg, #6d28d9, #1276e6);
+}
+
+:global(.app-light .form-field label) {
+  color: #33415f;
+}
+
+:global(.app-light .form-field .p-inputtext) {
+  border-color: #ccd5e7;
+  color: #15203b;
+  background: #ffffff;
+}
+
+:global(.app-light .form-field .p-inputicon) {
+  color: #7081a5;
 }
 </style>

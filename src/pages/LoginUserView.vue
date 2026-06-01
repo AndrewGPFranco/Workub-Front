@@ -4,28 +4,32 @@
       <aside class="login-aside" aria-label="Workhub">
         <img
             src="/banner-register.png"
-            alt="Workhub, um hub completo para organizar, colaborar e entregar mais."
+            :alt="t('auth.bannerAlt')"
             class="login-banner"
         >
       </aside>
 
       <main class="login-card">
+        <div class="page-controls">
+          <LanguageSelect/>
+          <ThemeToggle/>
+        </div>
         <RouterLink :to="{ name: 'Home' }" class="brand-link">
           <img src="/favicon.png" alt="" class="brand-mark">
           <span>Workhub</span>
         </RouterLink>
 
         <div class="form-heading">
-          <p class="eyebrow">Login</p>
-          <h2>Acesse sua conta</h2>
-          <p>Entre para continuar acompanhando suas tarefas, projetos e entregas.</p>
+          <p class="eyebrow">{{ t('auth.login.eyebrow') }}</p>
+          <h2>{{ t('auth.login.title') }}</h2>
+          <p>{{ t('auth.login.description') }}</p>
         </div>
 
         <FormLogin/>
 
         <p class="auth-switch">
-          Ainda não tem uma conta?
-          <RouterLink :to="{ name: 'User Register' }">Criar conta</RouterLink>
+          {{ t('auth.login.noAccount') }}
+          <RouterLink :to="{ name: 'User Register' }">{{ t('auth.login.createAccount') }}</RouterLink>
         </p>
       </main>
     </div>
@@ -34,6 +38,11 @@
 
 <script setup lang="ts">
 import FormLogin from '@/components/auth/FormLogin.vue';
+import ThemeToggle from '@/components/ThemeToggle.vue';
+import LanguageSelect from '@/components/LanguageSelect.vue';
+import {useLanguage} from '@/composables/use-language.ts';
+
+const {t} = useLanguage();
 </script>
 
 <style scoped>
@@ -131,6 +140,7 @@ import FormLogin from '@/components/auth/FormLogin.vue';
 }
 
 .login-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -138,6 +148,41 @@ import FormLogin from '@/components/auth/FormLogin.vue';
   overflow: auto;
   background: linear-gradient(180deg, rgba(12, 18, 42, 0.96), rgba(6, 10, 25, 0.98)),
   #060a19;
+}
+
+.page-controls {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:global(.app-light .login-page) {
+  background: radial-gradient(circle at 12% 8%, rgba(58, 117, 255, 0.16), transparent 28%),
+  radial-gradient(circle at 92% 86%, rgba(139, 54, 255, 0.12), transparent 30%),
+  #eef3ff;
+  color: #15203b;
+}
+
+:global(.app-light .login-shell) {
+  border-color: rgba(99, 102, 241, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 34px 90px rgba(55, 74, 130, 0.18);
+}
+
+:global(.app-light .login-card) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 255, 0.98)), #ffffff;
+}
+
+:global(.app-light .form-heading h2) {
+  color: #15203b;
+}
+
+:global(.app-light .form-heading p:last-child),
+:global(.app-light .auth-switch) {
+  color: #66718b;
 }
 
 .form-heading {

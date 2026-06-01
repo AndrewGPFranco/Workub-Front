@@ -1,11 +1,12 @@
 import type {ToastServiceMethods} from 'primevue/toastservice';
+import {translate} from '@/composables/use-language.ts';
 
 const TOAST_LIFE = 5000;
 
 export const showSuccessToast = (toast: ToastServiceMethods, detail: string) => {
     toast.add({
         severity: 'success',
-        summary: 'Operação concluída',
+        summary: translate('toast.success'),
         detail,
         life: TOAST_LIFE,
     });
@@ -14,7 +15,7 @@ export const showSuccessToast = (toast: ToastServiceMethods, detail: string) => 
 export const showErrorToast = (toast: ToastServiceMethods, detail: string) => {
     toast.add({
         severity: 'error',
-        summary: 'Não foi possível concluir',
+        summary: translate('toast.error'),
         detail,
         life: TOAST_LIFE,
     });

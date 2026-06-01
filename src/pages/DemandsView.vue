@@ -1,27 +1,31 @@
 <template>
   <div id="page-top" class="demands-page">
     <header class="site-header">
-      <nav class="navbar" aria-label="Navegação principal">
+      <nav class="navbar" :aria-label="t('demands.mainNav')">
         <RouterLink :to="{name: 'Demands'}" class="brand" aria-label="Workhub">
           <img src="/favicon.png" alt="" class="brand-logo">
           <span class="brand-copy">Work<span>hub</span></span>
         </RouterLink>
 
         <div class="navbar-center">
-          <a class="nav-link active" href="#demands-list"><i class="pi pi-inbox"/><span>Demandas</span></a>
-          <span class="nav-link muted" title="Review consolidado em breve"><i
-              class="pi pi-bookmark"/><span>Review</span></span>
+          <a class="nav-link active" href="#demands-list"><i class="pi pi-inbox"/><span>{{
+              t('demands.nav')
+            }}</span></a>
+          <span class="nav-link muted" :title="t('demands.reviewSoon')"><i
+              class="pi pi-bookmark"/><span>{{ t('demands.review') }}</span></span>
         </div>
 
         <div class="navbar-actions">
-          <Button icon="pi pi-search" text rounded disabled aria-label="Pesquisa em breve"/>
+          <Button icon="pi pi-search" text rounded disabled :aria-label="t('demands.searchSoon')"/>
+          <LanguageSelect/>
+          <ThemeToggle/>
           <span class="navbar-divider"/>
           <div class="profile-copy">
             <strong>{{ userName }}</strong>
             <span>{{ authStore.userLogged?.email }}</span>
           </div>
           <div class="avatar">{{ userInitials }}</div>
-          <Button icon="pi pi-sign-out" text rounded aria-label="Sair" @click="logout"/>
+          <Button icon="pi pi-sign-out" text rounded :aria-label="t('demands.logout')" @click="logout"/>
         </div>
       </nav>
     </header>
@@ -29,39 +33,39 @@
     <main class="workspace">
       <header class="desk-header">
         <div>
-          <p class="edition">Painel pessoal <span>/</span> {{ todayLabel }}</p>
-          <h1>Demandas em<br><em>movimento.</em></h1>
+          <p class="edition">{{ t('demands.personalPanel') }} <span>/</span> {{ todayLabel }}</p>
+          <h1>{{ t('demands.heading') }}<br><em>{{ t('demands.headingEmphasis') }}</em></h1>
         </div>
         <div class="header-aside">
-          <p>Uma visão direta do trabalho que precisa avançar.</p>
-          <Button label="Registrar demanda" icon="pi pi-plus" class="new-demand-button" @click="focusForm"/>
+          <p>{{ t('demands.intro') }}</p>
+          <Button :label="t('demands.register')" icon="pi pi-plus" class="new-demand-button" @click="focusForm"/>
         </div>
       </header>
 
-      <section class="pulse" aria-label="Resumo das demandas exibidas">
+      <section class="pulse" :aria-label="t('demands.currentSlice')">
         <div class="pulse-label">
           <span class="live-dot"/>
-          <strong>Recorte atual</strong>
+          <strong>{{ t('demands.currentSlice') }}</strong>
         </div>
         <dl>
           <div>
-            <dt>Itens</dt>
+            <dt>{{ t('demands.items') }}</dt>
             <dd>{{ demandStore.demands.length }}</dd>
           </div>
           <div>
-            <dt>Em curso</dt>
+            <dt>{{ t('demands.ongoing') }}</dt>
             <dd>{{ ongoingCount }}</dd>
           </div>
           <div>
-            <dt>Urgentes</dt>
+            <dt>{{ t('demands.urgent') }}</dt>
             <dd>{{ urgentCount }}</dd>
           </div>
           <div>
-            <dt>Atrasadas</dt>
+            <dt>{{ t('demands.overdue') }}</dt>
             <dd>{{ overdueCount }}</dd>
           </div>
           <div>
-            <dt>Fechadas</dt>
+            <dt>{{ t('demands.closed') }}</dt>
             <dd>{{ doneCount }}</dd>
           </div>
         </dl>
@@ -71,14 +75,14 @@
         <section id="demands-list" class="list-board">
           <div class="section-heading list-heading">
             <div>
-              <p class="kicker">Fila de trabalho</p>
-              <h2>O que está na mesa</h2>
+              <p class="kicker">{{ t('demands.queue') }}</p>
+              <h2>{{ t('demands.onTable') }}</h2>
             </div>
             <Button
                 icon="pi pi-refresh"
                 text
                 rounded
-                aria-label="Atualizar demandas"
+                :aria-label="t('demands.refresh')"
                 :loading="demandStore.isLoading"
                 @click="loadDemands(demandStore.currentPage)"
             />
@@ -86,16 +90,26 @@
 
           <div v-if="demandStore.isLoading" class="empty-state">
             <i class="pi pi-spin pi-spinner"/>
-            <span>Atualizando a fila...</span>
+            <span>{{ t('demands.loading') }}</span>
           </div>
 
           <div v-else-if="demandStore.demands.length === 0" class="empty-state">
-            <strong>Fila livre.</strong>
-            <span>Registre a próxima demanda para colocar o trabalho em movimento.</span>
+            <strong>{{ t('demands.emptyTitle') }}</strong>
+            <span>{{ t('demands.emptyDescription') }}</span>
           </div>
 
           <div v-else class="demand-list">
-            <article v-for="(demand, index) in demandStore.demands" :key="demand.id" class="demand-item">
+            <article
+                v-for="(demand, index) in demandStore.demands"
+                :key="demand.id"
+                class="demand-item"
+                role="button"
+                tabindex="0"
+                :aria-label="`${t('demands.viewDetails')}: ${demand.title}`"
+                @click="openDemandDetails(demand)"
+                @keydown.enter.self="openDemandDetails(demand)"
+                @keydown.space.self.prevent="openDemandDetails(demand)"
+            >
               <span class="demand-index">{{ String(index + 1).padStart(2, '0') }}</span>
               <div class="demand-main">
                 <div class="demand-title-row">
@@ -118,14 +132,15 @@
                 <span :class="['status-stamp', `status-${demand.status.toLowerCase()}`]">
                   {{ statusLabels[demand.status] }}
                 </span>
-                <Button icon="pi pi-pencil" text rounded aria-label="Editar demanda" @click="startEditing(demand)"/>
+                <Button icon="pi pi-pencil" text rounded :aria-label="t('demands.edit')"
+                        @click.stop="startEditing(demand)"/>
                 <Button
                     icon="pi pi-trash"
                     text
                     rounded
                     severity="danger"
-                    aria-label="Excluir demanda"
-                    @click="confirmDeletion(demand)"
+                    :aria-label="t('demands.delete')"
+                    @click.stop="confirmDeletion(demand)"
                 />
               </div>
             </article>
@@ -133,22 +148,22 @@
 
           <footer class="pagination">
             <span>
-              Folha {{ demandStore.currentPage + 1 }}
-              <template v-if="demandStore.totalPages"> de {{ demandStore.totalPages }}</template>
-              · {{ demandStore.totalElements }} itens
+              {{ t('demands.page') }} {{ demandStore.currentPage + 1 }}
+              <template v-if="demandStore.totalPages"> {{ t('demands.of') }} {{ demandStore.totalPages }}</template>
+              · {{ demandStore.totalElements }} {{ t('demands.items') }}
             </span>
             <div>
               <Button
                   icon="pi pi-arrow-left"
                   text
-                  aria-label="Página anterior"
+                  :aria-label="t('demands.previousPage')"
                   :disabled="demandStore.currentPage === 0 || demandStore.isLoading"
                   @click="loadDemands(demandStore.currentPage - 1)"
               />
               <Button
                   icon="pi pi-arrow-right"
                   text
-                  aria-label="Próxima página"
+                  :aria-label="t('demands.nextPage')"
                   :disabled="!demandStore.canGoForward || demandStore.isLoading"
                   @click="loadDemands(demandStore.currentPage + 1)"
               />
@@ -158,24 +173,24 @@
 
         <aside ref="formCard" class="intake">
           <div class="intake-heading">
-            <p class="kicker">{{ editingDemandId ? 'Ajuste de rota' : 'Entrada rápida' }}</p>
-            <h2>{{ editingDemandId ? 'Editar demanda' : 'Nova demanda' }}</h2>
+            <p class="kicker">{{ editingDemandId ? t('demands.editKicker') : t('demands.newKicker') }}</p>
+            <h2>{{ editingDemandId ? t('demands.edit') : t('demands.new') }}</h2>
             <p>{{
-                editingDemandId ? 'Atualize o registro conforme o trabalho avança.' : 'Capture agora. Refine enquanto executa.'
+                editingDemandId ? t('demands.editDescription') : t('demands.newDescription')
               }}</p>
           </div>
 
           <form class="demand-form" @submit.prevent="saveDemand">
             <label>
-              <span>Título</span>
-              <InputText v-model.trim="form.title" placeholder="Ex.: Revisar endpoint de clientes" required fluid/>
+              <span>{{ t('demands.title') }}</span>
+              <InputText v-model.trim="form.title" :placeholder="t('demands.titlePlaceholder')" required fluid/>
             </label>
 
             <label>
-              <span>Descrição</span>
+              <span>{{ t('demands.description') }}</span>
               <Textarea
                   v-model.trim="form.description"
-                  placeholder="Descreva o que precisa ser realizado"
+                  :placeholder="t('demands.descriptionPlaceholder')"
                   rows="5"
                   required
                   fluid
@@ -183,27 +198,27 @@
             </label>
 
             <label>
-              <span>Anotação para review <small>opcional</small></span>
+              <span>{{ t('demands.reviewNote') }} <small>{{ t('demands.optional') }}</small></span>
               <Textarea
                   v-model.trim="form.observationToReview"
-                  placeholder="Registre contexto, decisões ou o resultado esperado para consultar no review"
+                  :placeholder="t('demands.reviewNotePlaceholder')"
                   rows="4"
                   fluid
               />
             </label>
 
             <label>
-              <span>Prazo</span>
+              <span>{{ t('demands.deadline') }}</span>
               <InputText v-model="form.deadline" type="date" fluid/>
             </label>
 
             <div class="form-row">
               <label>
-                <span>Status</span>
+                <span>{{ t('demands.status') }}</span>
                 <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" fluid/>
               </label>
               <label>
-                <span>Prioridade</span>
+                <span>{{ t('demands.priority') }}</span>
                 <Select
                     v-model="form.priority"
                     :options="priorityOptions"
@@ -216,7 +231,7 @@
 
             <Button
                 type="submit"
-                :label="editingDemandId ? 'Salvar alterações' : 'Registrar demanda'"
+                :label="editingDemandId ? t('demands.save') : t('demands.register')"
                 :icon="editingDemandId ? 'pi pi-check' : 'pi pi-plus'"
                 :loading="isSubmitting"
                 :disabled="isSubmitting"
@@ -225,7 +240,7 @@
             <Button
                 v-if="editingDemandId"
                 type="button"
-                label="Cancelar edição"
+                :label="t('demands.cancelEdit')"
                 text
                 class="cancel-button"
                 @click="cancelEditing"
@@ -240,14 +255,89 @@
         <img src="/favicon.png" alt="" class="brand-logo small">
         <div>
           <strong>workhub</strong>
-          <span>Seu registro diário de entregas.</span>
+          <span>{{ t('demands.footerTagline') }}</span>
         </div>
       </div>
-      <p>Organize o presente. Documente o que avançou.</p>
-      <a href="#page-top">Voltar ao topo <i class="pi pi-arrow-up"/></a>
+      <p>{{ t('demands.footerText') }}</p>
+      <a href="#page-top">{{ t('demands.backToTop') }} <i class="pi pi-arrow-up"/></a>
     </footer>
 
     <Teleport to="body">
+      <Transition name="delete-modal">
+        <div
+            v-if="selectedDemand"
+            class="delete-modal-backdrop"
+            role="presentation"
+            @click.self="closeDemandDetails"
+        >
+          <section
+              ref="detailsModal"
+              class="delete-modal details-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="details-modal-title"
+              tabindex="-1"
+          >
+            <header class="delete-modal-header">
+              <div>
+                <p class="kicker">{{ t('demands.detailsKicker') }}</p>
+                <h2 id="details-modal-title">{{ selectedDemand.title }}</h2>
+              </div>
+              <button class="delete-modal-close" type="button" :aria-label="t('demands.close')"
+                      @click="closeDemandDetails">
+                <i class="pi pi-times"/>
+              </button>
+            </header>
+
+            <div class="details-modal-content">
+              <div class="details-stamps">
+                <span :class="['status-stamp', `status-${selectedDemand.status.toLowerCase()}`]">
+                  {{ statusLabels[selectedDemand.status] }}
+                </span>
+                <span :class="['priority-mark', `priority-${selectedDemand.priority.toLowerCase()}`]">
+                  {{ priorityLabels[selectedDemand.priority] }}
+                </span>
+              </div>
+
+              <section>
+                <h3>{{ t('demands.description') }}</h3>
+                <p>{{ selectedDemand.description }}</p>
+              </section>
+
+              <section v-if="selectedDemand.observationsToReview">
+                <h3>{{ t('demands.reviewNote') }}</h3>
+                <p>{{ selectedDemand.observationsToReview }}</p>
+              </section>
+
+              <dl class="details-meta">
+                <div>
+                  <dt>{{ t('demands.deadline') }}</dt>
+                  <dd><i class="pi pi-calendar"/>{{ formatDeadline(selectedDemand.deadline) }}</dd>
+                </div>
+                <div>
+                  <dt>{{ t('demands.createdAt') }}</dt>
+                  <dd><i class="pi pi-clock"/>{{ formatDate(selectedDemand.createdAt) }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <footer class="delete-modal-footer">
+              <button class="modal-button secondary" type="button" @click="closeDemandDetails">
+                {{ t('demands.close') }}
+              </button>
+              <button class="modal-button edit" type="button" @click="editSelectedDemand">
+                <i class="pi pi-pencil"/>
+                {{ t('demands.edit') }}
+              </button>
+              <button class="modal-button destructive" type="button" @click="deleteSelectedDemand">
+                <i class="pi pi-trash"/>
+                {{ t('demands.remove') }}
+              </button>
+            </footer>
+          </section>
+        </div>
+      </Transition>
+
       <Transition name="delete-modal">
         <div
             v-if="isDeleteDialogVisible"
@@ -266,10 +356,10 @@
           >
             <header class="delete-modal-header">
               <div>
-                <p class="kicker">Ação permanente</p>
-                <h2 id="delete-modal-title">Remover demanda</h2>
+                <p class="kicker">{{ t('demands.deleteKicker') }}</p>
+                <h2 id="delete-modal-title">{{ t('demands.deleteTitle') }}</h2>
               </div>
-              <button class="delete-modal-close" type="button" aria-label="Fechar" :disabled="isDeleting"
+              <button class="delete-modal-close" type="button" :aria-label="t('demands.close')" :disabled="isDeleting"
                       @click="closeDeleteDialog">
                 <i class="pi pi-times"/>
               </button>
@@ -278,21 +368,21 @@
             <div class="delete-modal-content">
               <span class="delete-modal-icon"><i class="pi pi-trash"/></span>
               <div>
-                <strong>Retirar este item da fila?</strong>
+                <strong>{{ t('demands.deleteQuestion') }}</strong>
                 <p id="delete-modal-description">
-                  A demanda <b>{{ demandToDelete?.title }}</b> será removida permanentemente.
-                  Esta ação não poderá ser desfeita.
+                  {{ t('demands.deleteDescriptionStart') }} <b>{{ demandToDelete?.title }}</b>
+                  {{ t('demands.deleteDescriptionEnd') }}
                 </p>
               </div>
             </div>
 
             <footer class="delete-modal-footer">
               <button class="modal-button secondary" type="button" :disabled="isDeleting" @click="closeDeleteDialog">
-                Manter demanda
+                {{ t('demands.keep') }}
               </button>
               <button class="modal-button destructive" type="button" :disabled="isDeleting" @click="deleteDemand">
                 <i :class="isDeleting ? 'pi pi-spin pi-spinner' : 'pi pi-trash'"/>
-                {{ isDeleting ? 'Removendo...' : 'Remover demanda' }}
+                {{ isDeleting ? t('demands.deleting') : t('demands.remove') }}
               </button>
             </footer>
           </section>
@@ -309,6 +399,9 @@ import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import {useToast} from 'primevue/usetoast';
+import ThemeToggle from '@/components/ThemeToggle.vue';
+import LanguageSelect from '@/components/LanguageSelect.vue';
+import {useLanguage} from '@/composables/use-language.ts';
 import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
 import {useDemandStore} from '@/stores/demand-store.ts';
@@ -321,27 +414,30 @@ const isDeleting = ref(false);
 const isDeleteDialogVisible = ref(false);
 const demandToDelete = ref<Demand | null>(null);
 const deleteModal = ref<HTMLElement | null>(null);
+const selectedDemand = ref<Demand | null>(null);
+const detailsModal = ref<HTMLElement | null>(null);
 const authStore = useAuthStore();
 const demandStore = useDemandStore();
 const formCard = ref<HTMLElement | null>(null);
 const editingDemandId = ref<string | null>(null);
+const {language, t} = useLanguage();
 
-const statusLabels: Record<DemandStatus, string> = {
-  PENDING: 'Pendente',
-  ONGOING: 'Em andamento',
-  BLOCKED: 'Bloqueada',
-  DONE: 'Concluída',
-};
+const statusLabels = computed<Record<DemandStatus, string>>(() => ({
+  PENDING: t('status.PENDING'),
+  ONGOING: t('status.ONGOING'),
+  BLOCKED: t('status.BLOCKED'),
+  DONE: t('status.DONE'),
+}));
 
-const priorityLabels: Record<DemandPriority, string> = {
-  LOW: 'Baixa',
-  MEDIUM: 'Média',
-  HIGH: 'Alta',
-  URGENT: 'Urgente',
-};
+const priorityLabels = computed<Record<DemandPriority, string>>(() => ({
+  LOW: t('priority.LOW'),
+  MEDIUM: t('priority.MEDIUM'),
+  HIGH: t('priority.HIGH'),
+  URGENT: t('priority.URGENT'),
+}));
 
-const statusOptions = Object.entries(statusLabels).map(([value, label]) => ({value, label}));
-const priorityOptions = Object.entries(priorityLabels).map(([value, label]) => ({value, label}));
+const statusOptions = computed(() => Object.entries(statusLabels.value).map(([value, label]) => ({value, label})));
+const priorityOptions = computed(() => Object.entries(priorityLabels.value).map(([value, label]) => ({value, label})));
 
 const emptyForm = (): RegisterDemand => ({
   title: '',
@@ -356,13 +452,16 @@ const form = reactive<RegisterDemand>(emptyForm());
 
 const userName = computed(() => {
   const user = authStore.userLogged;
-  return user ? `${user.firstName} ${user.lastName}` : 'Usuário';
+  return user ? `${user.firstName} ${user.lastName}` : t('demands.user');
 });
 const userInitials = computed(() => {
   const user = authStore.userLogged;
   return user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : 'WH';
 });
-const todayLabel = new Intl.DateTimeFormat('pt-BR', {day: '2-digit', month: 'long'}).format(new Date());
+const todayLabel = computed(() => new Intl.DateTimeFormat(language.value, {
+  day: '2-digit',
+  month: 'long'
+}).format(new Date()));
 const ongoingCount = computed(() => demandStore.demands.filter(({status}) => status === 'ONGOING').length);
 const urgentCount = computed(() => demandStore.demands.filter(({priority}) => priority === 'URGENT').length);
 const doneCount = computed(() => demandStore.demands.filter(({status}) => status === 'DONE').length);
@@ -375,7 +474,7 @@ const loadDemands = async (page = 0) => {
   const result = await demandStore.fetchDemands(page);
 
   if (result.isError) {
-    showErrorToast(toast, 'Não foi possível carregar suas demandas.');
+    showErrorToast(toast, t('demands.loadError'));
   }
 };
 
@@ -434,6 +533,34 @@ const confirmDeletion = async (demand: Demand) => {
   deleteModal.value?.focus();
 };
 
+const openDemandDetails = async (demand: Demand) => {
+  selectedDemand.value = demand;
+  await nextTick();
+  detailsModal.value?.focus();
+};
+
+const closeDemandDetails = () => {
+  selectedDemand.value = null;
+};
+
+const editSelectedDemand = () => {
+  const demand = selectedDemand.value;
+  if (!demand)
+    return;
+
+  closeDemandDetails();
+  startEditing(demand);
+};
+
+const deleteSelectedDemand = () => {
+  const demand = selectedDemand.value;
+  if (!demand)
+    return;
+
+  closeDemandDetails();
+  confirmDeletion(demand);
+};
+
 const closeDeleteDialog = () => {
   if (isDeleting.value)
     return;
@@ -470,18 +597,20 @@ const deleteDemand = async () => {
 };
 
 const closeDeleteDialogOnEscape = (event: KeyboardEvent) => {
-  if (event.key === 'Escape')
+  if (event.key === 'Escape') {
+    closeDemandDetails();
     closeDeleteDialog();
+  }
 };
 
 const formatDeadline = (deadline: string | null) => {
   if (!deadline)
-    return 'Sem prazo definido';
+    return t('demands.noDeadline');
 
-  return new Intl.DateTimeFormat('pt-BR', {timeZone: 'UTC'}).format(new Date(`${deadline}T00:00:00Z`));
+  return new Intl.DateTimeFormat(language.value, {timeZone: 'UTC'}).format(new Date(`${deadline}T00:00:00Z`));
 };
 
-const formatDate = (date: string) => new Intl.DateTimeFormat('pt-BR').format(new Date(date));
+const formatDate = (date: string) => new Intl.DateTimeFormat(language.value).format(new Date(date));
 
 const focusForm = () => {
   formCard.value?.scrollIntoView({behavior: 'smooth', block: 'start'});
@@ -853,11 +982,17 @@ h2 {
   gap: 14px;
   padding: 20px 24px;
   border-bottom: 1px solid #e2e3df;
+  outline: 0;
+  cursor: pointer;
   transition: background 160ms ease;
 }
 
-.demand-item:hover {
+.demand-item:hover, .demand-item:focus-visible {
   background: #fbfcf6;
+}
+
+.demand-item:focus-visible {
+  box-shadow: inset 3px 0 #6e63d9;
 }
 
 .demand-index {
@@ -1159,6 +1294,71 @@ h2 {
   box-shadow: 0 24px 55px rgba(23, 62, 50, 0.22);
 }
 
+.details-modal {
+  width: min(100%, 680px);
+}
+
+.details-modal-content {
+  display: grid;
+  gap: 20px;
+  max-height: min(62dvh, 620px);
+  padding: 22px;
+  overflow-y: auto;
+}
+
+.details-stamps {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.details-modal-content h3 {
+  color: #213b33;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.details-modal-content p {
+  margin-top: 7px;
+  color: #63736d;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.details-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.details-meta div {
+  padding: 12px;
+  border: 1px solid #e1e3de;
+  background: #f6f6f1;
+}
+
+.details-meta dt {
+  color: #8b9691;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.details-meta dd {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin: 7px 0 0;
+  color: #42685d;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .delete-modal-header, .delete-modal-content, .delete-modal-footer {
   display: flex;
 }
@@ -1265,6 +1465,17 @@ h2 {
   background: #c45436;
 }
 
+.modal-button.edit {
+  border-color: #6e63d9;
+  color: #ffffff;
+  background: #6e63d9;
+}
+
+.modal-button.edit:hover {
+  border-color: #5e53ca;
+  background: #5e53ca;
+}
+
 .modal-button.destructive:not(:disabled):hover {
   border-color: #aa432a;
   background: #aa432a;
@@ -1287,23 +1498,124 @@ h2 {
   transform: translateY(-8px);
 }
 
-@media (prefers-color-scheme: dark) {
-  .demands-page {
-    --panel-strong-bg: #171b2b;
-    --panel-strong-bg-hover: #111624;
-    --panel-strong-field: #101522;
-    --panel-strong-border: rgba(214, 220, 244, 0.16);
-    --panel-strong-heading: #f7f5ef;
-    --panel-strong-text: #c5ccdf;
-    --panel-strong-muted: #8993ad;
-    --panel-accent: #8876ff;
-    --panel-accent-hover: #9d8dff;
-    --panel-accent-contrast: #ffffff;
-    --footer-bg: #101522;
-    --footer-heading: #f7f5ef;
-    --footer-text: #929cb4;
-    --footer-link: #a496ff;
-  }
+:global(.app-dark .demands-page) {
+  --panel-strong-bg: #171b2b;
+  --panel-strong-bg-hover: #111624;
+  --panel-strong-field: #101522;
+  --panel-strong-border: rgba(214, 220, 244, 0.16);
+  --panel-strong-heading: #f7f5ef;
+  --panel-strong-text: #c5ccdf;
+  --panel-strong-muted: #8993ad;
+  --panel-accent: #8876ff;
+  --panel-accent-hover: #9d8dff;
+  --panel-accent-contrast: #ffffff;
+  --footer-bg: #101522;
+  --footer-heading: #f7f5ef;
+  --footer-text: #929cb4;
+  --footer-link: #a496ff;
+  color: #dbe3df;
+  background: #0d1420;
+}
+
+:global(.app-dark .navbar) {
+  border-color: rgba(214, 220, 244, 0.12);
+  background: rgba(20, 27, 42, 0.94);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+:global(.app-dark .brand),
+:global(.app-dark .nav-link:hover),
+:global(.app-dark .nav-link.active),
+:global(.app-dark h1),
+:global(.app-dark h2),
+:global(.app-dark .pulse dd),
+:global(.app-dark .demand-item h3) {
+  color: #e8efec;
+}
+
+:global(.app-dark .navbar-center),
+:global(.app-dark .demand-actions .p-button:hover) {
+  background: #111927;
+}
+
+:global(.app-dark .nav-link:hover),
+:global(.app-dark .nav-link.active) {
+  background: #202b3c;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+:global(.app-dark .navbar-divider),
+:global(.app-dark .pulse dl div) {
+  border-color: rgba(214, 220, 244, 0.13);
+}
+
+:global(.app-dark .navbar-divider) {
+  background: rgba(214, 220, 244, 0.13);
+}
+
+:global(.app-dark .pulse) {
+  border-color: rgba(214, 220, 244, 0.16);
+}
+
+:global(.app-dark .list-board),
+:global(.app-dark .intake) {
+  border-color: rgba(214, 220, 244, 0.14);
+  background: rgba(20, 27, 42, 0.88);
+  box-shadow: 0 15px 32px rgba(0, 0, 0, 0.14);
+}
+
+:global(.app-dark .list-heading),
+:global(.app-dark .demand-item) {
+  border-color: rgba(214, 220, 244, 0.12);
+}
+
+:global(.app-dark .demand-item:hover),
+:global(.app-dark .pagination) {
+  background: #111927;
+}
+
+:global(.app-dark .delete-modal-backdrop) {
+  background: rgba(4, 9, 17, 0.7);
+}
+
+:global(.app-dark .delete-modal) {
+  border-color: rgba(214, 220, 244, 0.16);
+  background: #171b2b;
+  box-shadow: 0 24px 55px rgba(0, 0, 0, 0.32);
+}
+
+:global(.app-dark .delete-modal-header),
+:global(.app-dark .delete-modal-footer) {
+  border-color: rgba(214, 220, 244, 0.14);
+}
+
+:global(.app-dark .delete-modal-footer) {
+  background: #111624;
+}
+
+:global(.app-dark .delete-modal-content strong) {
+  color: #f7f5ef;
+}
+
+:global(.app-dark .delete-modal-content p) {
+  color: #aab5c9;
+}
+
+:global(.app-dark .details-modal-content h3) {
+  color: #f7f5ef;
+}
+
+:global(.app-dark .details-modal-content p) {
+  color: #c5ccdf;
+}
+
+:global(.app-dark .details-meta div) {
+  border-color: rgba(214, 220, 244, 0.14);
+  background: #111624;
+}
+
+:global(.app-dark .details-meta dd) {
+  color: #aab5c9;
 }
 
 @media (max-width: 980px) {
@@ -1407,6 +1719,19 @@ h2 {
 
   .pulse dl {
     min-width: 430px;
+  }
+
+  .details-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .details-modal .delete-modal-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .details-modal .modal-button {
+    justify-content: center;
   }
 }
 </style>

@@ -198,7 +198,7 @@ const messages = {
         'demands.queue': 'Work queue',
         'demands.onTable': 'What is on the table',
         'demands.filterByStatus': 'Filter by status',
-        'demands.allStatus': 'All statuses',
+        'demands.allStatus': 'All status',
         'demands.filterByPriority': 'Filter by priority',
         'demands.allPriorities': 'All priorities',
         'demands.refresh': 'Refresh tasks',

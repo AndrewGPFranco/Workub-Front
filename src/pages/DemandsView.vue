@@ -11,8 +11,6 @@
           <a class="nav-link active" href="#demands-list"><i class="pi pi-inbox"/><span>{{
               t('demands.nav')
             }}</span></a>
-          <span class="nav-link muted" :title="t('demands.reviewSoon')"><i
-              class="pi pi-bookmark"/><span>{{ t('demands.review') }}</span></span>
         </div>
 
         <div class="navbar-actions">

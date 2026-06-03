@@ -12,6 +12,7 @@ export interface Demand {
     observationsToReview?: string | null;
     createdAt: string;
     updatedAt: string | null;
+    finalizedAt: Date | null;
 }
 
 export interface EditDemand {
@@ -21,6 +22,7 @@ export interface EditDemand {
     status: DemandStatus;
     priority: DemandPriority;
     observationsToReview: string | null;
+    finalizedAt: Date | null;
 }
 
 export interface RegisterDemand {
@@ -30,4 +32,5 @@ export interface RegisterDemand {
     status: DemandStatus;
     priority: DemandPriority;
     observationToReview: string | null;
+    finalizedAt: Date | null;
 }

@@ -88,90 +88,75 @@
                   :aria-label="t('demands.filterByStatus')"
                   class="status-filter"
                   @change="applyFilters"
-
-
-              ct
-     el="selectedPriority
-          tyFilte
-              option-label="label"
-     n-value="value"
-                 demands.filterByPriority')"
-                 ('
-            rByPri
-
-          ass= status-filter"
-                  @change="applyFi
-                    />
-              <Button
-      icon="pi pi-refresh"
-
-
-          unde
-                  :aria-label="t('demands.r fresh')"
-           ng="demand tore.isLoading"
-                  @ mands(demandStore.currentPage)"
               />
-            </di
-           </d v>
-
-          <div v-if="de
-            oading"  e">
-            <i class="pi pi-spin pi-spinne
-                     <span>{{ t('dema /span>
-          </
-
-                     div v-else-if ands.length  ty-state">
-            <strong>{{ t('demands.emptyTitle') }}
-                          <span>{{ t('demands.emptyDesc n>
+              <Select
+                  v-model="selectedPriorityFilter"
+                  :options="priorityFilterOptions"
+                  option-label="label"
+                  option-value="value"
+                  :placeholder="t('demands.filterByPriority')"
+                  :aria-label="t('demands.filterByPriority')"
+                  class="status-filter"
+                  @change="applyFilters"
+              />
+              <Button
+                  icon="pi pi-refresh"
+                  text
+                  rounded
+                  :aria-label="t('demands.refresh')"
+                  :loading="demandStore.isLoading"
+                  @click="loadDemands(demandStore.currentPage)"
+              />
+            </div>
           </div>
 
-          <div v-else clas
-                                 <article
-                v-for="(demand, ind
-                              :key="demand.id"
+          <div v-if="demandStore.isLoading" class="empty-state">
+            <i class="pi pi-spin pi-spinner"/>
+            <span>{{ t('demands.loading') }}</span>
+          </div>
+
+          <div v-else-if="demandStore.demands.length === 0" class="empty-state">
+            <strong>{{ t('demands.emptyTitle') }}</strong>
+            <span>{{ t('demands.emptyDescription') }}</span>
+          </div>
+
+          <div v-else class="demand-list">
+            <article
+                v-for="(demand, index) in demandStore.demands"
+                :key="demand.id"
                 class="demand-item"
-
-              ="bu ton"
-
-                             :aria-label="`${tls')}: ${demand.tit e}`"
-                     k="op nDemandDetails(demand)"
+                role="button"
+                tabindex="0"
+                :aria-label="`${t('demands.viewDetails')}: ${demand.title}`"
+                @click="openDemandDetails(demand)"
                 @keydown.enter.self="openDemandDetails(demand)"
-                @keydown.space.self.prevent="openDemandDetails(deman
-
-
-                ass=" emand-index">{{ St ing(in
-                (2  '0') }}</span>
+                @keydown.space.self.prevent="openDemandDetails(demand)"
+            >
+              <span class="demand-index">{{ String(index + 1).padStart(2, '0') }}</span>
               <div class="demand-main">
-                  iv class="demand-title-row">
-    {{ demand.title }}</h3>
-          lass
-                ', ` riority-${demand.pri}`]">
+                <div class="demand-title-row">
+                  <h3>{{ demand.title }}</h3>
+                  <span :class="['priority-mark', `priority-${demand.priority.toLowerCase()}`]">
                     {{ priorityLabels[demand.priority] }}
-
-                            </div>
+                  </span>
+                </div>
                 <p>{{ demand.description }}</p>
-      ="dema
-              ToRevi
-              ew-n te">
-                  <i class="pi pi-bookma k-fill"/>
+                <p v-if="demand.observationsToReview" class="review-note">
+                  <i class="pi pi-bookmark-fill"/>
                   {{ demand.observationsToReview }}
                 </p>
                 <div class="demand-meta">
-
-                i pi-ca endar"/>{{ formatDe dlin (demand deadline) }}</span>
-             pi-clock"/>{{ formatDate(demand.cre
-
-
-                              </div>
-  ss="
-                            status-stamp', `s .toLowerCase()}`]">
-              demand.status] }}
-                </s
-
-              "pi pi
-             rounded :
-          "t('de
-          "
+                  <span><i class="pi pi-calendar"/>{{ formatDeadline(demand.deadline) }}</span>
+                  <span><i class="pi pi-clock"/>{{ formatDate(demand.createdAt) }}</span>
+                  <span v-if="demand.finalizedAt"><i
+                      class="pi pi-check-circle"/>{{ formatOptionalDate(demand.finalizedAt) }}</span>
+                </div>
+              </div>
+              <div class="demand-actions">
+                <span :class="['status-stamp', `status-${demand.status.toLowerCase()}`]">
+                  {{ statusLabels[demand.status] }}
+                </span>
+                <Button icon="pi pi-pencil" text rounded :aria-label="t('demands.edit')"
                         @click.stop="startEditing(demand)"/>
                 <Button
                     icon="pi pi-trash"
@@ -180,852 +165,561 @@
                     severity="danger"
                     :aria-label="t('demands.delete')"
                     @click.stop="confirmDeletion(demand)"
-                /
-               </div>
-                  cle>
+                />
+              </div>
+            </article>
           </div>
 
- lass
-                          <span>
-              {{ t('dema mandStore.currentPage + 1 }}
-              <template v-if="demandS { t('demands.of') }} {{ demandStore.totalPages }}
-
-              emandSt } {{ t('demands.items')
-                      an>
-
-                                   <Button
-               ow-left"
+          <footer class="pagination">
+            <span>
+              {{ t('demands.page') }} {{ demandStore.currentPage + 1 }}
+              <template v-if="demandStore.totalPages"> {{ t('demands.of') }} {{ demandStore.totalPages }}</template>
+              · {{ demandStore.totalElements }} {{ t('demands.items') }}
+            </span>
+            <div>
+              <Button
+                  icon="pi pi-arrow-left"
                   text
-                  :aria-label= sPage')"
-                  :disabled="demandStore=
-            ore.is
-
-        lick="load
-        mandSt re.currentPage - 1)"
-
-                     <Button
-         =" i pi-arrow-right"
-                              text
-                   a ia-label="t('demands.n xtPage
-                     :disabled="!d m ndStore.canGoForw r  || demandStore. sLoadin
-                  mands(demandSto e currentPage + 1)"
+                  :aria-label="t('demands.previousPage')"
+                  :disabled="demandStore.currentPage === 0 || demandStore.isLoading"
+                  @click="loadDemands(demandStore.currentPage - 1)"
+              />
+              <Button
+                  icon="pi pi-arrow-right"
+                  text
+                  :aria-label="t('demands.nextPage')"
+                  :disabled="!demandStore.canGoForward || demandStore.isLoading"
+                  @click="loadDemands(demandStore.currentPage + 1)"
               />
             </div>
+          </footer>
+        </section>
 
-     n>
-
-
-           ref= formCard" class="in ake">
-          <div class="i">
-     s="kicker">{{ editingDemandId ? t('de
-            r') : t('d mands.newKicker') }}</p>
-            <h2>{{ editingDemandId ? t('deman s.edit') : t('de
-          }</h2>
-  {{
-     tingDemandId ? t('demands.editDescription') ewDescrip
-                }}</p>
+        <aside ref="formCard" class="intake">
+          <div class="intake-heading">
+            <p class="kicker">{{ editingDemandId ? t('demands.editKicker') : t('demands.newKicker') }}</p>
+            <h2>{{ editingDemandId ? t('demands.edit') : t('demands.new') }}</h2>
+            <p>{{
+                editingDemandId ? t('demands.editDescription') : t('demands.newDescription')
+              }}</p>
           </div>
 
-     demand-form" @submit.prevent="saveDemand">
-
-                       .title')
-                   od .title"  t('dema older')" required fluid/>
+          <form class="demand-form" @submit.prevent="saveDemand">
+            <label>
+              <span>{{ t('demands.title') }}</span>
+              <InputText v-model.trim="form.title" :placeholder="t('demands.titlePlaceholder')" required fluid/>
             </label>
 
             <label>
-              <sp s.descrip
-                          <Textarea
-                  .description"
-                  :placeholder="t(' Placehol
-
-             quired
-     flui
-             />
-            </label>
-
-            <l
-                 <span {{ t('demands.reviewNot ') }} <smal >{{ t('
-          nal') }}
-            >
-              <Texta
-                      m.observationToReview"
-                t('dema ds.reviewNotePlacehol er')"
-                   ows="4"
+              <span>{{ t('demands.description') }}</span>
+              <Textarea
+                  v-model.trim="form.description"
+                  :placeholder="t('demands.descriptionPlaceholder')"
+                  rows="5"
+                  required
                   fluid
               />
- abel>
+            </label>
 
-  el>
-    {{ t('demands.deadline') }}</span>
-      xt v-mo ype="date" fluid/>
+            <label>
+              <span>{{ t('demands.reviewNote') }} <small>{{ t('demands.optional') }}</small></span>
+              <Textarea
+                  v-model.trim="form.observationToReview"
+                  :placeholder="t('demands.reviewNotePlaceholder')"
+                  rows="4"
+                  fluid
+              />
+            </label>
 
+            <label>
+              <span>{{ t('demands.deadline') }}</span>
+              <InputText v-model="form.deadline" type="date" fluid/>
+            </label>
 
-                       <div class="form-
-              label>
-              s.status') }}</span>
-              ect vus tusOptiobel="l
-            alue="v
-                           </
-                    <label>
+            <label>
+              <span>{{ t('demands.finalizedAt') }} <small>{{ t('demands.optional') }}</small></span>
+              <InputText v-model="form.finalizedAt" type="date" fluid/>
+            </label>
+
+            <div class="form-row">
+              <label>
+                <span>{{ t('demands.status') }}</span>
+                <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" fluid/>
+              </label>
+              <label>
                 <span>{{ t('demands.priority') }}</span>
                 <Select
                     v-model="form.priority"
-    :options="priorityOpti
-                        option-label="la
-                        option-value=
+                    :options="priorityOptions"
+                    option-label="label"
+                    option-value="value"
+                    fluid
+                />
+              </label>
+            </div>
 
-            fluid
-
-              </label
-  iv>
-
-
-             type="submit"
-        edit demands.save') : t('d "
-                :icoan
-          i-check
-        i-plus'"
-
-    ing="is
-    ting"
-                :disab
-      Subm tting"
-              subm t-button"
+            <Button
+                type="submit"
+                :label="editingDemandId ? t('demands.save') : t('demands.register')"
+                :icon="editingDemandId ? 'pi pi-check' : 'pi pi-plus'"
+                :loading="isSubmitting"
+                :disabled="isSubmitting"
+                class="submit-button"
             />
             <Button
-
-         v-ifmandId"
-                 n"
-                :label="t('demands.cancelE
-
-       text
-
-               class="cancel-button
-                @click="cancelEdit ng"
+                v-if="editingDemandId"
+                type="button"
+                :label="t('demands.cancelEdit')"
+                text
+                class="cancel-button"
+                @click="cancelEditing"
             />
           </form>
         </aside>
-   section>
+      </section>
+    </main>
 
-    main>
-
-    <footer c
-      ite-footer"
-      <div class="f
-        nd">
-             src="/favicon.png" a brand-logo small">
-        <d
-             <strong>workhub</s
-                <span>{{ t('demands.footerTa}
-               </d
-              >
-      <p>{{ t('d xt') }}</p>
-      <a href="#page-t ds.backToTop' pi pi-arrow-up"/>
-              er>
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <img src="/favicon.png" alt="" class="brand-logo small">
+        <div>
+          <strong>workhub</strong>
+          <span>{{ t('demands.footerTagline') }}</span>
+        </div>
+      </div>
+      <p>{{ t('demands.footerText') }}</p>
+      <a href="#page-top">{{ t('demands.backToTop') }} <i class="pi pi-arrow-up"/></a>
+    </footer>
 
     <Teleport to="body">
-      < ="delete-moda
-
-                v-i ="selectedDemand"
-
-              -moda
-                       role="present tion"
-            @click.s lf="cl
-
+      <Transition name="delete-modal">
+        <div
+            v-if="selectedDemand"
+            class="delete-modal-backdrop"
+            role="presentation"
+            @click.self="closeDemandDetails"
         >
           <section
-              ref="det ilsModa
-                clas
-               detail -modal"
-              role "dialog"
+              ref="detailsModal"
+              class="delete-modal details-modal"
+              role="dialog"
               aria-modal="true"
-      y="details-modal-title"
-    x= -1"
+              aria-labelledby="details-modal-title"
+              tabindex="-1"
           >
-     class="de
-            ader">
-
-            iv>
-                <p class="kicke
-              s.de ailsKicker') }}</p>
-                <h2 id="d tails-modal-title">{{ selectedDemand.title }}</h2>
+            <header class="delete-modal-header">
+              <div>
+                <p class="kicker">{{ t('demands.detailsKicker') }}</p>
+                <h2 id="details-modal-title">{{ selectedDemand.title }}</h2>
               </div>
-              <button class="delete-modal-close" type="button" :aria-label="t('demands.
-                              @click="closeDemandDetails">
+              <button class="delete-modal-close" type="button" :aria-label="t('demands.close')"
+                      @click="closeDemandDetails">
                 <i class="pi pi-times"/>
               </button>
             </header>
 
-            <div class="details-modal-conte
-                  <d
-              s-stamps"
-                 <span :class="['status-stamp', `status
-                .stat s.toLowerCase()}`]">
-            Labels[sel
-              us] }}
+            <div class="details-modal-content">
+              <div class="details-stamps">
+                <span :class="['status-stamp', `status-${selectedDemand.status.toLowerCase()}`]">
+                  {{ statusLabels[selectedDemand.status] }}
                 </span>
-                <spanty-mar ', `priority-${selected emand.p
-                se()} ]">
-                  {{ priorityLa els[seiority] }}
-               </ pan>
-              </
+                <span :class="['priority-mark', `priority-${selectedDemand.priority.toLowerCase()}`]">
+                  {{ priorityLabels[selectedDemand.priority] }}
+                </span>
+              </div>
 
-                   <s
-                       < 3>{{ t('demands.descr ption')
-                         p>{{ selectedDemand.descri tion }}</p>
+              <section>
+                <h3>{{ t('demands.description') }}</h3>
+                <p>{{ selectedDemand.description }}</p>
               </section>
 
+              <section v-if="selectedDemand.observationsToReview">
+                <h3>{{ t('demands.reviewNote') }}</h3>
+                <p>{{ selectedDemand.observationsToReview }}</p>
+              </section>
 
+              <dl class="details-meta">
+                <div>
+                  <dt>{{ t('demands.deadline') }}</dt>
+                  <dd><i class="pi pi-calendar"/>{{ formatDeadline(selectedDemand.deadline) }}</dd>
+                </div>
+                <div>
+                  <dt>{{ t('demands.createdAt') }}</dt>
+                  <dd><i class="pi pi-clock"/>{{ formatDate(selectedDemand.createdAt) }}</dd>
+                </div>
+                <div>
+                  <dt>{{ t('demands.finalizedAt') }}</dt>
+                  <dd><i class="pi pi-check-circle"/>{{ formatOptionalDate(selectedDemand.finalizedAt) }}</dd>
+                </div>
+              </dl>
+            </div>
 
-                f="sel
-                vatio
-                            <h3>{{ t('demands.r viewNot
-                           <p>{{ selectedDemand. bservationsToReview }}</p>
-
-                    </s
-
-
-              ils-m
-
-                         <dt>{{ t('demands.deadl
-                               <dd><i class="pi pi-c lendar"/>{{ f rmatDeadline(selectedDemand.
-                </di >
-
-               <div>
-
-               <dt>{{ t('demands.createdAt') }} /dt>
-                  <dd><i class="pi pitD te(selectedDemand.crea
-                              </div>
-
-              l>
-
-
-                         <footer class="delete-modal-f oter">
-              <button class="modal-buyp ="button" @click="clo
-                {{ t( de
-              }
-
-            on>
-
-          utton clas
-        button
-      type="button"
-      "editSelect dDemand">
-
-        clas il"/>
-                {{ t(' ) }}
+            <footer class="delete-modal-footer">
+              <button class="modal-button secondary" type="button" @click="closeDemandDetails">
+                {{ t('demands.close') }}
               </button>
-  <button class="mod tructive" type="button" @click=l
-          ">
-      lass="pi pi-trash
-           {{ t('demands.r
-                </b
-          </footer>
-    n>
+              <button class="modal-button edit" type="button" @click="editSelectedDemand">
+                <i class="pi pi-pencil"/>
+                {{ t('demands.edit') }}
+              </button>
+              <button class="modal-button destructive" type="button" @click="deleteSelectedDemand">
+                <i class="pi pi-trash"/>
+                {{ t('demands.remove') }}
+              </button>
+            </footer>
+          </section>
         </div>
-      </Transition
+      </Transition>
 
-      ition name="delete-modal">
+      <Transition name="delete-modal">
         <div
-    isDeleteDialo
-
-            ss="del te-modal-backdrop"
-
-              tatio
-                li k.self="closeDele eDialog"
+            v-if="isDeleteDialogVisible"
+            class="delete-modal-backdrop"
+            role="presentation"
+            @click.self="closeDeleteDialog"
         >
-          <se
-                    ef="deleteModal"
+          <section
+              ref="deleteModal"
               class="delete-modal"
-                         alog"
-
-              ria-mod l="true"
-              ari -labelledby=" elete-modal-title"
-              aria-describedby="dele
-                                   tabindex="-1"
-
-                       <header class="deer">
-
-            v>
-
-            lass "kicker">{{ t('demands.delete
-                <h2 id="delete-mo al-title">{{ t('demands.dele
-              2>
-  >
-              <button class="delete- odal-close"
-                ri -label="t('demands.close')" :d "
-                      @click="closeD le eDial g">
-                <  class
-                              </button>
-            </ ea
-
-                 <di-modal
-
-            ass="de ete-modal-icon"><i class="pi
-              pan>
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-modal-title"
+              aria-describedby="delete-modal-description"
+              tabindex="-1"
+          >
+            <header class="delete-modal-header">
               <div>
-                <strong>{{  ('demands.deleteQuesti n') }}</strong>
-            e- odal-description"
+                <p class="kicker">{{ t('demands.deleteKicker') }}</p>
+                <h2 id="delete-modal-title">{{ t('demands.deleteTitle') }}</h2>
+              </div>
+              <button class="delete-modal-close" type="button" :aria-label="t('demands.close')" :disabled="isDeleting"
+                      @click="closeDeleteDialog">
+                <i class="pi pi-times"/>
+              </button>
+            </header>
 
-                {{ t('d
-              scripti nStart') }} <b>{{ demandToDelete .title }}</b>
-                                        {{ t 'demands.deleteDescrip
-                            </p>
+            <div class="delete-modal-content">
+              <span class="delete-modal-icon"><i class="pi pi-trash"/></span>
+              <div>
+                <strong>{{ t('demands.deleteQuestion') }}</strong>
+                <p id="delete-modal-description">
+                  {{ t('demands.deleteDescriptionStart') }} <b>{{ demandToDelete?.title }}</b>
+                  {{ t('demands.deleteDescriptionEnd') }}
+                </p>
               </div>
             </div>
 
-         =" elete-moda - ooter">
-              < utton class="modal- ut
-              type="but
-            d="isDele
-          k="closeDe
-        g">
-
-             {{ t('
-    ds.keep') }
-
-      </but
-n>
-              <button class= modal-butt n destruc ive" type="butto " :disable ="isDelet ng"  clic ="dele
-eDeman ">
-                <i :class="
-sDelet ng ? 'pi  i-sp n pi-spinner' : 'pi p
--trash "/>
-                {{ isDelet
-ng ? t 'demands dele ing') : t('demands.r
-move') }
-  }
-
-        </button>
-
-  </fo ter>
-          < section>
+            <footer class="delete-modal-footer">
+              <button class="modal-button secondary" type="button" :disabled="isDeleting" @click="closeDeleteDialog">
+                {{ t('demands.keep') }}
+              </button>
+              <button class="modal-button destructive" type="button" :disabled="isDeleting" @click="deleteDemand">
+                <i :class="isDeleting ? 'pi pi-spin pi-spinner' : 'pi pi-trash'"/>
+                {{ isDeleting ? t('demands.deleting') : t('demands.remove') }}
+              </button>
+            </footer>
+          </section>
         </div>
-      <
-Transi ion>
-    </Tel port
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
-<script set
-p lang "
-  ts">
-  import
-  comp ted, nextTick, onBeforeUnmount,
-nMount d, rea tive  ref} from
-vue';
- mport Button f om ' rimevue/button';
-import I
-putTex  from 'primevue/ nput ext';
-import Select from 'p
-imevue sele t
-  ';
-  impo t Textarea from 'primevue/tex area';
-impo t {useToast} f
-r m 'p imevue/usetoast';
-import The
-eToggl  from '@/compone ts/ThemeToggle.vu ';
-i port LanguageSelect
+<script setup lang="ts">
+import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref} from 'vue';
+import Button from 'primevue/button';
+import InputText from 'primevue/inputtext';
+import Select from 'primevue/select';
+import Textarea from 'primevue/textarea';
+import {useToast} from 'primevue/usetoast';
+import ThemeToggle from '@/components/ThemeToggle.vue';
+import LanguageSelect from '@/components/LanguageSelect.vue';
+import {useLanguage} from '@/composables/use-language.ts';
+import router from '@/router';
+import {useAuthStore} from '@/stores/auth-store.ts';
+import {useDemandStore} from '@/stores/demand-store.ts';
+import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
+import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 
-rom ' /comp n nts/Languag
-Selec .vue';
-impor   useLanguage
- from '@/composa l s/use-langu
-ge.ts ;
-import router from  @ router';
-im
-ort { seAuthStore} f o  '@/stores a th-store.ts'
+type DemandForm = Omit<RegisterDemand, 'finalizedAt'> & {
+  finalizedAt: string | null;
+};
 
-impo t {useDeman S ore} from '@/st r s/demand-sto
-e.ts'
-import type { e and, Deman P iority, Dema
-dStat s, EditDeman , RegisterDemand} f om '@/types/
-emand /Demand.t '
-import {showEr
-orToa t, showSucc s Toast} from '@/ut
-ls/to st.ts';
+const toast = useToast();
+const isSubmitting = ref(false);
+const isDeleting = ref(false);
+const isDeleteDialogVisible = ref(false);
+const demandToDelete = ref<Demand | null>(null);
+const deleteModal = ref<HTMLElement | null>(null);
+const selectedDemand = ref<Demand | null>(null);
+const detailsModal = ref<HTMLElement | null>(null);
+const authStore = useAuthStore();
+const demandStore = useDemandStore();
+const formCard = ref<HTMLElement | null>(null);
+const editingDemandId = ref<string | null>(null);
+const {language, t} = useLanguage();
 
-    c nst toast = use o st();
-const
-sSubm tting = ref(fal e ;
-const is e eting = ref(
-alse)
-
-  const isD l
-e e ialogVisible =
-ef(fa se);
-const d m ndToDelete = ref<Demand | nul >(null);
-co st de
-  eModal = ref<HTMLElement | nu (null);
- onst selectedDemand  ef<Deman  | null>(null);
-cons etail Modal = ref<HTMLE
-emen
-| nul >(null);
-const a thStore = useAuthStore();
-const demandStore =  se
-  andS ore();
-const formC  = ref< TMLElement | null>(nu ;
-con t editingDemandId = f<strin  | null>(null);
-const
-{lan
-age,  } = useLangua e );
-
-const s at sLabels = computed<Record<DemandStatus, string> (() =>  {
-  PENDING  t('status
-PENDI G'),
-  ONGOING: t(' t tus.ONGOING ),
-     O
-      CKED:  ('stat s.BLOC ED'),
-  DONE: t('statu
-    s. E'),
+const statusLabels = computed<Record<DemandStatus, string>>(() => ({
+  PENDING: t('status.PENDING'),
+  ONGOING: t('status.ONGOING'),
+  BLOCKED: t('status.BLOCKED'),
+  DONE: t('status.DONE'),
 }));
 
-const prioriyLa
-els = computed<Record D mandPriorit ,  tring>>(() => ({
+const priorityLabels = computed<Record<DemandPriority, string>>(() => ({
   LOW: t('priority.LOW'),
-  MEDI M: t('p io it
-  y.MEDI M'),
-
-  HIG
-: t(' riority.HIGH'),
-  UR E T: t('priority.U G NT'),
+  MEDIUM: t('priority.MEDIUM'),
+  HIGH: t('priority.HIGH'),
+  URGENT: t('priority.URGENT'),
 }));
 
-co
-t sta usOptions = com uted(() => Obj ct en
-  es(sta usL ls.value).ma (([ ue, label ) =>  alue, l bel})));
-c t statusF lterOptio = computed(() => [
-  {valu
-: '
-L', l bel: t 'demands.allStatus')},
-  ...statusOpti
-s.val e,
+const statusOptions = computed(() => Object.entries(statusLabels.value).map(([value, label]) => ({value, label})));
+const statusFilterOptions = computed(() => [
+  {value: 'ALL', label: t('demands.allStatus')},
+  ...statusOptions.value,
 ]);
-c n t priorityO ti n
-   comp ted( ) => Object.entries(pri
-  tyLabe s.va u ).map(([value, label]) => ({value, l b l})));
-const prior
-tyF
-lterO tions = comp t d(() => [
-  {v l
-   'ALL , la e : t('demands.allPrior
-  es')},
-        .. p iorityOptions.value,
+const priorityOptions = computed(() => Object.entries(priorityLabels.value).map(([value, label]) => ({value, label})));
+const priorityFilterOptions = computed(() => [
+  {value: 'ALL', label: t('demands.allPriorities')},
+  ...priorityOptions.value,
 ]);
-const selectedStatusFilter = r f Deman
-Sta
-us |  ALL'>('ALL )
-const sele te Pri rityFilter = ref<DemandPriority | ' L
-  ('AL ');
+const selectedStatusFilter = ref<DemandStatus | 'ALL'>('ALL');
+const selectedPriorityFilter = ref<DemandPriority | 'ALL'>('ALL');
 
-const ptyFor  = ():
-RegisterDeman  => ({
-
-itle: '',
-  descri t on: '',
-  d ad ine: null,
-  status: 'PENDING
-                                           ',
-                                             p
-                                         ri ri y: 'ME IUM ,
-  observationToRe
-iew:  ull,
+const emptyForm = (): DemandForm => ({
+  title: '',
+  description: '',
+  deadline: null,
+  status: 'PENDING',
+  priority: 'MEDIUM',
+  observationToReview: null,
+  finalizedAt: null
 });
 
-c n t form = re ct ve<RegisterDemand>(emptyForm(
-                                                       ));
+const form = reactive<DemandForm>(emptyForm());
 
-                                                       con
-                                                     st us rName =  omp ted(() => {
-  cons
- user = authSto e userLogged;
-       eturn user ? `${user.firstName} ${use .l stName ` : t('demands.user'
-;
+const userName = computed(() => {
+  const user = authStore.userLogged;
+  return user ? `${user.firstName} ${user.lastName}` : t('demands.user');
 });
-    const userIn t als = compu ed (
-      > {
- const u er   authStore.userLogged;
-  retu n us
-      ? `${u er.firstName[0]}${user.lastName[0]}`.t UpperCas () : 'WH';
- );
-          const to a Label =  ompute (() => new Intl.Dat
-    Tim
-ormat language.va u , {
-  day:  2 di it ,
-  month  'long
- ).for at(new Date()));
-const ongoingC
-   = computed(() => d m
-    ore.demands.filter(({ tatus}) => status === 'O
-  I
-G'
-lengt );
-const urgentCo n  = co p
-  d(() => demandStore.dema d .filter(({priority}) => pr ori y === ' RGEN ' .length);
-const doneCount =
-  mputed () => demandSto
-e.
-mands filter(({s a us})  >  ta u
-  == 'DONE').length);
-con erdueCo
-  = computed(() => {
-        const
-  day = new Da e ).toISOString().slice ;
-        ret rn demandStore.demands.filter(({deadline, sta us}) => deadlin a line   today && status !== 'DONE').length;
-}
+const userInitials = computed(() => {
+  const user = authStore.userLogged;
+  return user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : 'WH';
+});
+const todayLabel = computed(() => new Intl.DateTimeFormat(language.value, {
+  day: '2-digit',
+  month: 'long'
+}).format(new Date()));
+const ongoingCount = computed(() => demandStore.demands.filter(({status}) => status === 'ONGOING').length);
+const urgentCount = computed(() => demandStore.demands.filter(({priority}) => priority === 'URGENT').length);
+const doneCount = computed(() => demandStore.demands.filter(({status}) => status === 'DONE').length);
+const overdueCount = computed(() => {
+  const today = new Date().toISOString().slice(0, 10);
+  return demandStore.demands.filter(({deadline, status}) => deadline && deadline < today && status !== 'DONE').length;
+});
 
-  co st loadDemands = a
-    (page = 0) => {
-  con t result = await
-    dStore.fetchDemand ( age);
+const loadDemands = async (page = 0) => {
+  const result = await demandStore.fetchDemands(page);
 
-     (resul
-  s
-  r) {
-      showErr
-  oast(toast, t('demands. oadError'));
+  if (result.isError) {
+    showErrorToast(toast, t('demands.loadError'));
   }
-
-
-  cons  applyFilters = () => {
-  demandStore
-  atusFilter = selec e Status
-il
-r.val e === 'ALL'    ull : selected ta us
-  ter.va ue;
-  deman ore.priority ilter = selectedP rityFilte .value === 'AL ? null   selectedPri tyFilter. alue;
-  return adDemands(0);
 };
 
-con t saveDemand = async () =
- {
-
-if (i Submitting.v l e)
-    r turn;
-
-  i S
-  itting.value = true;
-   onst resul
-   editingDemandId.va u
-       ? a ait demandSto itDemand(edi ingDemandId.value,  tDemand()
-      : await d Store.r gisterDemand({ rm});
-
-   f (result.isErro
-        showErrorToast(t ast, result.response);
-     sS bmitt
-  .va
-   = false;
-
- r
-urn;
-  }
-
-  cancelE i in ()
-
-  howSuccessToast(toast   esult
-  sponse);
-  await lo dDemands(dema
-dS
-re.cu rentPage);
-  is u mitti g.value   false;
-    };
-
-  st toEditDemand = ()   ditDema
-  => ({
-   title: form.title,
-   escri
-  on: f rm.descript
-  ,
-    deadline: form.deadline
-
-
-tatus  form.status,
-  p i rity: form.pri rity,
-  ob e
-  tionsToReview: form. b ervatio
-  Revie ,
-});
-
-cons
-  tartEditing = (demand: Deman
-)
- {
-   ditingDemandId.val e =  em n
-  d;
-    Object.assign(f r , {
-
-
-tle:  emand.title,
-    d s ri ti n
-  emand descri t on,
-    deadline: dem
-  .d adline,
-  atus: d
-  d.status,
-      priorit
-  demand.priority,
-
-bs
-vatio ToReview: demand.obs r at on T
-  view  ? null
-  });
-  focusForm();
-}
-
-  co st cancel ng = ()
-  {
-  editingDemandId.v
-  e = null;
-    Object.assig
-(f
-m, em tyForm());
+const applyFilters = () => {
+  demandStore.statusFilter = selectedStatusFilter.value === 'ALL' ? null : selectedStatusFilter.value;
+  demandStore.priorityFilter = selectedPriorityFilter.value === 'ALL' ? null : selectedPriorityFilter.value;
+  return loadDemands(0);
 };
 
-co s  c nf r
-  le ion = async (deman mand) =
-    demandToDelete.value = de a d;
-  i
-  leteDialogVisible.va u  = tr
-e;
- awai  nextTick();
-      delet Mo al v
-  e?.fo us();
- ;
-
-      const openDemandDeta
-   = async (d ma d: Demand) => {
-  ctedDem
-  value = demand;
-   wait
-  tTick );
-  d t ilsMo al.value?.focus();
-};
-
-const closeDe
-  De ails = () => {
-  s
-    edDemand.value = null
-};
-
-const editSe
-    dDemand = () =>
-  const
-    nd = se
-  t
-  ma d.value;
-  if (!demand
+const saveDemand = async () => {
+  if (isSubmitting.value)
     return;
 
- seDemandDetails(
-   star Edit n (demand);
-};
+  isSubmitting.value = true;
+  const result = editingDemandId.value
+      ? await demandStore.editDemand(editingDemandId.value, toEditDemand())
+      : await demandStore.registerDemand(toRegisterDemand());
 
-const delete ele t dD mand = () => {
-  const  e a l ctedDemand.value;
-  if  ! e
-         return;
-
-  closeDemandD
-  ls();
-    confirmDeletion demand);
-};
-
-cons
-  loseD leteDialog = () =>
-    if (isDeleting v lue)
-
-  return;
-
- isDeleteD
-al
-Visib e.value = false;
-  demand o elete.v lue = null;
-};
-
-    c n
-  de eteDemand   as nc () =>
-
-    st demand = demandToD
-    .value;
-      if (!deman
-  |
-is
-letin .value)
-    re u n;
-
-  isDe eting. a ue =  ru ;
-  co st result = t dema dStore.deleteDemand(dema
-  d);
-
- if  result.isError) {
-    showErrorToas (toast, re ult.response);
-    isDeleting.value = false;
-    r
-tu
-;
+  if (result.isError) {
+    showErrorToast(toast, result.response);
+    isSubmitting.value = false;
+    return;
   }
 
-      if (edi i gDeman Id.valu  = = d mand.id)
+  cancelEditing();
+  showSuccessToast(toast, result.response);
+  await loadDemands(demandStore.currentPage);
+  isSubmitting.value = false;
+};
+
+const toRegisterDemand = (): RegisterDemand => ({
+  ...form,
+  finalizedAt: parseInputDate(form.finalizedAt),
+});
+
+const toEditDemand = (): EditDemand => ({
+  title: form.title,
+  description: form.description,
+  deadline: form.deadline,
+  status: form.status,
+  priority: form.priority,
+  observationsToReview: form.observationToReview,
+  finalizedAt: parseInputDate(form.finalizedAt)
+});
+
+const startEditing = (demand: Demand) => {
+  editingDemandId.value = demand.id;
+  Object.assign(form, {
+    title: demand.title,
+    description: demand.description,
+    deadline: demand.deadline,
+    status: demand.status,
+    priority: demand.priority,
+    observationToReview: demand.observationsToReview ?? null,
+    finalizedAt: toInputDate(demand.finalizedAt)
+  });
+  focusForm();
+};
+
+const cancelEditing = () => {
+  editingDemandId.value = null;
+  Object.assign(form, emptyForm());
+};
+
+const confirmDeletion = async (demand: Demand) => {
+  demandToDelete.value = demand;
+  isDeleteDialogVisible.value = true;
+  await nextTick();
+  deleteModal.value?.focus();
+};
+
+const openDemandDetails = async (demand: Demand) => {
+  selectedDemand.value = demand;
+  await nextTick();
+  detailsModal.value?.focus();
+};
+
+const closeDemandDetails = () => {
+  selectedDemand.value = null;
+};
+
+const editSelectedDemand = () => {
+  const demand = selectedDemand.value;
+  if (!demand)
+    return;
+
+  closeDemandDetails();
+  startEditing(demand);
+};
+
+const deleteSelectedDemand = () => {
+  const demand = selectedDemand.value;
+  if (!demand)
+    return;
+
+  closeDemandDetails();
+  confirmDeletion(demand);
+};
+
+const closeDeleteDialog = () => {
+  if (isDeleting.value)
+    return;
+
+  isDeleteDialogVisible.value = false;
+  demandToDelete.value = null;
+};
+
+const deleteDemand = async () => {
+  const demand = demandToDelete.value;
+  if (!demand || isDeleting.value)
+    return;
+
+  isDeleting.value = true;
+  const result = await demandStore.deleteDemand(demand.id);
+
+  if (result.isError) {
+    showErrorToast(toast, result.response);
+    isDeleting.value = false;
+    return;
+  }
+
+  if (editingDemandId.value === demand.id)
     cancelEditing();
 
-  const page =  emandStore.d
-ands. ength === 1 && de a
-  tore.currentPage > 0
-      ? dem
-    andStore. urrentPag  - 1
-      : d
-  ema
-dS
-re.cu rentPa e
+  const page = demandStore.demands.length === 1 && demandStore.currentPage > 0
+      ? demandStore.currentPage - 1
+      : demandStore.currentPage;
 
-  s ow uc e
-  oast(toast, result.
-  ponse ;
-  await loadDema ds(page);
-
- i
-eleting.valu  = f
-  e;
-    closeDele
-  ialog();
+  showSuccessToast(toast, result.response);
+  await loadDemands(page);
+  isDeleting.value = false;
+  closeDeleteDialog();
 };
 
-const closeDeleteDial gOnEscape = (event: Keyboar
-Eve
-) => {
-  if (event ke  === 'Escape') {
-    closeDemandDetai s();
-    closeDeleteDialog()
+const closeDeleteDialogOnEscape = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    closeDemandDetails();
+    closeDeleteDialog();
   }
 };
 
+const formatDeadline = (deadline: string | null) => {
+  if (!deadline)
+    return t('demands.noDeadline');
 
-nst fo matDeadline
+  return new Intl.DateTimeFormat(language.value, {timeZone: 'UTC'}).format(new Date(`${deadline}T00:00:00Z`));
+};
 
-=
-(
-deadline: string | null
+const formatDate = (date: string) => new Intl.DateTimeFormat(language.value).format(new Date(date));
 
-)
-=
-> {
-  if (! deadline) return t('demands.noDeadline');
+const formatOptionalDate = (date: Date | string | null) => {
+  if (!date)
+    return t('demands.notFinalized');
 
-  return new Intl.
+  if (typeof date === 'string' && isDateOnly(date))
+    return formatDateOnly(date);
 
-DateTimeFormat(language . value, {
-  timeZone: 'UTC'
-}) . format(new Date(` ${deadline} T00: 00: 00 Z `));
-}
+  return new Intl.DateTimeFormat(language.value).format(new Date(date));
+};
 
-;
+const parseInputDate = (date: string | null) => date ? new Date(`${date}T00:00:00`) : null;
 
-const formatDate
+const toInputDate = (date: Date | string | null) => {
+  if (!date)
+    return null;
 
-=
-(
-date: string
+  if (typeof date === 'string' && isDateOnly(date))
+    return date;
 
-)
-=
-> new Intl.
+  const parsedDate = new Date(date);
 
-DateTimeFormat
-(
-language.value
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.toISOString().slice(0, 10);
+};
 
-)
-.
+const isDateOnly = (date: string) => /^\d{4}-\d{2}-\d{2}$/.test(date);
 
-format
-(
-new
+const formatDateOnly = (date: string) =>
+    new Intl.DateTimeFormat(language.value, {timeZone: 'UTC'}).format(new Date(`${date}T00:00:00Z`));
 
-Date
-(
-date
+const focusForm = () => {
+  formCard.value?.scrollIntoView({behavior: 'smooth', block: 'start'});
+};
 
-)
-)
-;
+const logout = async () => {
+  authStore.logout();
+  await router.push({name: 'Login'});
+};
 
-const focusForm
-
-=
-(
-)
-=
-> {
-  formCard.value? .
-
-scrollIntoView( {
-  behavior: 'smooth',
-  block: 'start'
+onMounted(() => {
+  loadDemands();
+  window.addEventListener('keydown', closeDeleteDialogOnEscape);
 });
-}
 
-;
+onBeforeUnmount(() => window.removeEventListener('keydown', closeDeleteDialogOnEscape));
+</script>
 
-const logout
-
-=
-async
-
-(
-)
-=
-> {
-  authStore.
-
-logout();
-
-  await router.
-
-push( {
-  name: 'Login'
-});
-}
-
-;
-
-onMounted
-(
-(
-)
-=
-> {
-loadDemands();
-
-  window.
-
-addEventListener('keydown', closeDeleteDialogOnEscape);
-}
-
-)
-;
-
-onBeforeUnmount
-(
-(
-)
-=
-> window.
-
-removeEventListener
-(
-'keydown'
-,
-closeDeleteDialogOnEscape
-
-)
-)
-;
-<
-/
-script >
-
-<
-style scoped >
+<style scoped>
 * {
   box-sizing: border-box;
 }

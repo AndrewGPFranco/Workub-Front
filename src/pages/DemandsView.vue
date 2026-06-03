@@ -16,7 +16,33 @@
         </div>
 
         <div class="navbar-actions">
-          <Button icon="pi pi-search" text rounded disabled :aria-label="t('demands.searchSoon')"/>
+          <form class="search-form navbar-search" role="search" @submit.prevent="searchDemands">
+            <InputText
+                v-model.trim="searchTerm"
+                type="search"
+                :placeholder="t('demands.searchPlaceholder')"
+                :aria-label="t('demands.search')"
+                class="search-input"
+            />
+            <Button
+                icon="pi pi-search"
+                type="submit"
+                text
+                rounded
+                :aria-label="t('demands.search')"
+                :loading="demandStore.isLoading && isSearching"
+            />
+            <Button
+                v-if="searchTerm"
+                icon="pi pi-times"
+                type="button"
+                text
+                rounded
+                :aria-label="t('demands.clearSearch')"
+                :disabled="demandStore.isLoading"
+                @click="clearSearch"
+            />
+          </form>
           <LanguageSelect/>
           <ThemeToggle/>
           <span class="navbar-divider"/>
@@ -457,6 +483,8 @@ const authStore = useAuthStore();
 const demandStore = useDemandStore();
 const formCard = ref<HTMLElement | null>(null);
 const editingDemandId = ref<string | null>(null);
+const searchTerm = ref('');
+const isSearching = ref(false);
 const {language, t} = useLanguage();
 
 const statusLabels = computed<Record<DemandStatus, string>>(() => ({
@@ -529,7 +557,37 @@ const loadDemands = async (page = 0) => {
 const applyFilters = () => {
   demandStore.statusFilter = selectedStatusFilter.value === 'ALL' ? null : selectedStatusFilter.value;
   demandStore.priorityFilter = selectedPriorityFilter.value === 'ALL' ? null : selectedPriorityFilter.value;
+  searchTerm.value = '';
   return loadDemands(0);
+};
+
+const searchDemands = async () => {
+  const title = searchTerm.value.trim();
+
+  if (!title) {
+    await loadDemands(0);
+    return;
+  }
+
+  isSearching.value = true;
+  const result = await demandStore.searchDemand(title);
+  isSearching.value = false;
+
+  if (result.isError) {
+    if (typeof result.response !== 'string')
+      return;
+
+    showErrorToast(toast, result.response);
+    return;
+  }
+
+  if (typeof result.response === 'string')
+    showSuccessToast(toast, result.response);
+};
+
+const clearSearch = async () => {
+  searchTerm.value = '';
+  await loadDemands(0);
 };
 
 const saveDemand = async () => {
@@ -1048,6 +1106,26 @@ h2 {
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navbar-search {
+  min-width: 230px;
+}
+
+.search-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.search-input {
+  padding-block: 8px;
+  font-size: 0.78rem;
 }
 
 .status-filter {
@@ -1753,6 +1831,11 @@ h2 {
 
   .brand-copy, .profile-copy, .navbar-divider, .navbar-actions > :deep(.p-button:first-child), .nav-link span {
     display: none;
+  }
+
+  .navbar-search {
+    width: min(180px, 38vw);
+    min-width: 118px;
   }
 
   .nav-link {

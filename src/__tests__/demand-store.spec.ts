@@ -67,4 +67,50 @@ describe('demand store', () => {
             }),
         );
     });
+
+    it('sends the title when searching demands', async () => {
+        const store = useDemandStore();
+
+        await store.searchDemand('Jobs');
+
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+            `${store.url}/demands/search`,
+            expect.objectContaining({
+                params: {title: 'Jobs'},
+            }),
+        );
+    });
+
+    it('updates the demand list when search returns a page', async () => {
+        const store = useDemandStore();
+        const demand = {
+            id: '84ffee53-03cd-4816-a0d7-9e4e48817c3f',
+            title: 'Possibilidade de inativar Jobs',
+            description: 'Permite inativar jobs',
+            deadline: null,
+            status: 'DONE',
+            priority: 'MEDIUM',
+            createdAt: '2026-06-01T09:17:01.215891',
+            updatedAt: '2026-06-02T22:59:45.943148',
+            observationsToReview: null,
+            finalizedAt: '2026-06-02',
+        };
+        mockedAxios.get.mockResolvedValueOnce({
+            data: {
+                httpStatusCode: 200,
+                data: {
+                    content: [demand],
+                    page: 0,
+                    totalPages: 1,
+                    totalElements: 1,
+                    hasNext: false,
+                },
+            },
+        });
+
+        await store.searchDemand('Jobs');
+
+        expect(store.demands).toEqual([demand]);
+        expect(store.totalElements).toBe(1);
+    });
 });

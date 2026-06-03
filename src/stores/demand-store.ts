@@ -55,6 +55,45 @@ export const useDemandStore = defineStore('demand-store', {
                 this.isLoading = false;
             }
         },
+        async searchDemand(title: string): Promise<ResponseAPI<Demand[] | string>> {
+            this.isLoading = true;
+
+            try {
+                const {data} = await axios.get<ResponseAPI<PageResponse<Demand> | Demand[] | string>>(
+                    `${this.url}/demands/search`,
+                    {
+                        params: {title},
+                        headers: this.authorizationHeader(),
+                    },
+                );
+
+                if (Array.isArray(data.data)) {
+                    this.demands = data.data;
+                    this.currentPage = 0;
+                    this.totalPages = 1;
+                    this.totalElements = data.data.length;
+                    this.canGoForward = false;
+
+                    return new ResponseAPI(data.httpStatusCode, data.data);
+                }
+
+                if (typeof data.data === 'object') {
+                    this.demands = data.data.content;
+                    this.currentPage = data.data.page;
+                    this.totalPages = data.data.totalPages;
+                    this.totalElements = data.data.totalElements;
+                    this.canGoForward = data.data.hasNext;
+
+                    return new ResponseAPI(data.httpStatusCode, data.data.content);
+                }
+
+                return new ResponseAPI(data.httpStatusCode, data.data);
+            } catch (error) {
+                return new ResponseAPI(500, getApiErrorMessage(error, translate('demands.searchError')));
+            } finally {
+                this.isLoading = false;
+            }
+        },
         async registerDemand(demand: RegisterDemand): Promise<ResponseAPI<string>> {
             try {
                 const {data} = await axios.post<ResponseAPI<string>>(

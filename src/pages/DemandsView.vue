@@ -8,9 +8,12 @@
         </RouterLink>
 
         <div class="navbar-center">
-          <a class="nav-link active" href="#demands-list"><i class="pi pi-inbox"/><span>{{
+          <RouterLink class="nav-link active" :to="{name: 'Demands'}"><i class="pi pi-inbox"/><span>{{
               t('demands.nav')
-            }}</span></a>
+            }}</span></RouterLink>
+          <RouterLink class="nav-link" :to="{name: 'Daily'}"><i class="pi pi-calendar-clock"/><span>{{
+              t('daily.nav')
+            }}</span></RouterLink>
         </div>
 
         <div class="navbar-actions">

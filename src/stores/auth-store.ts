@@ -11,6 +11,53 @@ import type {AuthResponse} from "@/types/auth/AuthResponse.ts";
 const TOKEN_STORAGE_KEY = "token";
 const USER_STORAGE_KEY = "userLogged";
 
+const decodeBase64Url = (value: string) => {
+    const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+    const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+
+    return atob(paddedBase64);
+};
+
+const getTokenExpiration = (token: string): number | null => {
+    const [, payload] = token.split('.');
+
+    if (!payload)
+        return null;
+
+    try {
+        const claims = JSON.parse(decodeBase64Url(payload)) as { exp?: unknown };
+        return typeof claims.exp === 'number' ? claims.exp : null;
+    } catch (_) {
+        return null;
+    }
+};
+
+export const isTokenExpired = (token: string) => {
+    const expiration = getTokenExpiration(token);
+
+    if (!expiration)
+        return true;
+
+    return expiration <= Math.floor(Date.now() / 1000);
+};
+
+export const clearStoredSession = () => {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
+};
+
+export const hasValidStoredSession = () => {
+    const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+    const user = localStorage.getItem(USER_STORAGE_KEY);
+
+    if (!token || !user || isTokenExpired(token)) {
+        clearStoredSession();
+        return false;
+    }
+
+    return true;
+};
+
 /**
  * @author andrewgo
  */
@@ -27,10 +74,14 @@ export const useAuthStore = defineStore('auth-store', {
             localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
         },
         initializeSession() {
-            const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+            if (!hasValidStoredSession()) {
+                this.userLogged = null;
+                return;
+            }
+
             const user = localStorage.getItem(USER_STORAGE_KEY);
 
-            if (!token || !user) {
+            if (!user) {
                 this.userLogged = null;
                 return;
             }
@@ -43,8 +94,7 @@ export const useAuthStore = defineStore('auth-store', {
         },
         logout() {
             this.userLogged = null;
-            localStorage.removeItem(TOKEN_STORAGE_KEY);
-            localStorage.removeItem(USER_STORAGE_KEY);
+            clearStoredSession();
         },
         async register(user: UserRegister): Promise<ResponseAPI<string>> {
             try {

@@ -4,6 +4,7 @@ import DemandsView from '@/pages/DemandsView.vue'
 import LoginUserView from '@/pages/LoginUserView.vue'
 import {createRouter, createWebHistory} from 'vue-router'
 import RegisterUserView from '@/pages/RegisterUserView.vue'
+import {hasValidStoredSession} from '@/stores/auth-store.ts'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -49,7 +50,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-    const isAuthenticated = Boolean(localStorage.getItem("token"));
+    const isAuthenticated = hasValidStoredSession();
 
     if (to.meta.guestOnly && isAuthenticated)
         return {name: "Demands"};

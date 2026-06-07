@@ -2,9 +2,9 @@ import axios from 'axios';
 import {defineStore} from 'pinia';
 import ResponseAPI from '@/utils/ResponseAPI.ts';
 import {translate} from '@/composables/use-language.ts';
-import {getApiErrorMessage} from '@/utils/api-error.ts';
 import type {PageResponse} from '@/types/http/PageResponse.ts';
 import type {Daily, RegisterDaily} from '@/types/daily/Daily.ts';
+import {getApiErrorMessage, getApiErrorStatus} from '@/utils/api-error.ts';
 
 const TOKEN_STORAGE_KEY = 'token';
 
@@ -53,7 +53,7 @@ export const useDailyStore = defineStore('daily-store', {
 
                 return new ResponseAPI(data.httpStatusCode, payload);
             } catch (error) {
-                return new ResponseAPI(500, getApiErrorMessage(error, translate('daily.loadError')));
+                return new ResponseAPI(getApiErrorStatus(error), getApiErrorMessage(error, translate('daily.loadError')));
             } finally {
                 this.isLoading = false;
             }

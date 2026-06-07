@@ -1,9 +1,9 @@
 import axios from 'axios';
 import {defineStore} from 'pinia';
 import ResponseAPI from '@/utils/ResponseAPI.ts';
-import {getApiErrorMessage} from '@/utils/api-error.ts';
 import {translate} from '@/composables/use-language.ts';
 import type {PageResponse} from '@/types/http/PageResponse.ts';
+import {getApiErrorMessage, getApiErrorStatus} from '@/utils/api-error.ts';
 import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
 
 const TOKEN_STORAGE_KEY = 'token';
@@ -49,8 +49,8 @@ export const useDemandStore = defineStore('demand-store', {
                 this.canGoForward = data.data.hasNext;
 
                 return new ResponseAPI(data.httpStatusCode, data.data.content);
-            } catch (_) {
-                return new ResponseAPI(500, []);
+            } catch (error) {
+                return new ResponseAPI(getApiErrorStatus(error), []);
             } finally {
                 this.isLoading = false;
             }

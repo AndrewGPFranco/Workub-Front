@@ -3,9 +3,11 @@ import DailyView from '@/pages/DailyView.vue'
 import DemandsView from '@/pages/DemandsView.vue'
 import FeedbackView from '@/pages/FeedbackView.vue'
 import LoginUserView from '@/pages/LoginUserView.vue'
+import AccessDeniedView from '@/pages/AccessDeniedView.vue'
 import {createRouter, createWebHistory} from 'vue-router'
 import RegisterUserView from '@/pages/RegisterUserView.vue'
 import {hasValidStoredSession} from '@/stores/auth-store.ts'
+import {getDefaultAuthorizedRouteName, hasStoredPlanResource} from '@/composables/use-plan-resources.ts'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,7 +22,8 @@ const router = createRouter({
             component: DemandsView,
             name: "Demands",
             meta: {
-                requiresAuth: true
+                requiresAuth: true,
+                resource: 'DEMANDS',
             }
         },
         {
@@ -28,13 +31,23 @@ const router = createRouter({
             component: DailyView,
             name: "Daily",
             meta: {
-                requiresAuth: true
+                requiresAuth: true,
+                resource: 'DAILY',
             }
         },
         {
             path: "/feedback",
             component: FeedbackView,
             name: "Feedback",
+            meta: {
+                requiresAuth: true,
+                resource: 'FEEDBACK',
+            }
+        },
+        {
+            path: "/access-denied",
+            component: AccessDeniedView,
+            name: "Access Denied",
             meta: {
                 requiresAuth: true
             }
@@ -66,6 +79,15 @@ router.beforeEach((to) => {
 
     if (to.meta.requiresAuth && !isAuthenticated)
         return {name: "Login"};
+
+    if (to.meta.resource && !hasStoredPlanResource(to.meta.resource as 'DAILY' | 'DEMANDS' | 'FEEDBACK')) {
+        const defaultRoute = getDefaultAuthorizedRouteName();
+
+        if (defaultRoute !== 'Access Denied')
+            return {name: defaultRoute};
+
+        return {name: 'Access Denied'};
+    }
 });
 
 export default router

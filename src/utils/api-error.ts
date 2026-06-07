@@ -12,3 +12,10 @@ export const getApiErrorMessage = (error: unknown, fallback: string): string => 
     const response = error.response?.data as Partial<ResponseAPI<string>> & LegacyErrorResponse | undefined;
     return response?.data || response?.error || fallback;
 };
+
+export const getApiErrorStatus = (error: unknown): number => {
+    if (!axios.isAxiosError(error))
+        return 500;
+
+    return error.response?.status ?? 500;
+};

@@ -2,8 +2,8 @@ import axios from 'axios';
 import {defineStore} from 'pinia';
 import ResponseAPI from '@/utils/ResponseAPI.ts';
 import {translate} from '@/composables/use-language.ts';
-import {getApiErrorMessage} from '@/utils/api-error.ts';
 import type {PageResponse} from '@/types/http/PageResponse.ts';
+import {getApiErrorMessage, getApiErrorStatus} from '@/utils/api-error.ts';
 import type {Feedback, RegisterFeedback} from '@/types/feedback/Feedback.ts';
 
 const TOKEN_STORAGE_KEY = 'token';
@@ -50,7 +50,7 @@ export const useFeedbackStore = defineStore('feedback-store', {
 
                 return new ResponseAPI(data.httpStatusCode, payload);
             } catch (error) {
-                return new ResponseAPI(500, getApiErrorMessage(error, translate('feedback.loadError')));
+                return new ResponseAPI(getApiErrorStatus(error), getApiErrorMessage(error, translate('feedback.loadError')));
             } finally {
                 this.isLoading = false;
             }

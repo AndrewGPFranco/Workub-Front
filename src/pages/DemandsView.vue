@@ -2,19 +2,19 @@
   <div id="page-top" class="demands-page">
     <header class="site-header">
       <nav class="navbar" :aria-label="t('demands.mainNav')">
-        <RouterLink :to="{name: 'Demands'}" class="brand" aria-label="Workhub">
+        <RouterLink :to="{name: defaultRouteName}" class="brand" aria-label="Workhub">
           <img src="/favicon.png" alt="" class="brand-logo">
           <span class="brand-copy">Work<span>hub</span></span>
         </RouterLink>
 
         <div class="navbar-center">
-          <RouterLink class="nav-link active" :to="{name: 'Demands'}"><i class="pi pi-inbox"/><span>{{
+          <RouterLink v-if="canAccess('DEMANDS')" class="nav-link active" :to="{name: 'Demands'}"><i class="pi pi-inbox"/><span>{{
               t('demands.nav')
             }}</span></RouterLink>
-          <RouterLink class="nav-link" :to="{name: 'Daily'}"><i class="pi pi-calendar-clock"/><span>{{
+          <RouterLink v-if="canAccess('DAILY')" class="nav-link" :to="{name: 'Daily'}"><i class="pi pi-calendar-clock"/><span>{{
               t('daily.nav')
             }}</span></RouterLink>
-          <RouterLink class="nav-link" :to="{name: 'Feedback'}"><i class="pi pi-comments"/><span>{{
+          <RouterLink v-if="canAccess('FEEDBACK')" class="nav-link" :to="{name: 'Feedback'}"><i class="pi pi-comments"/><span>{{
               t('feedback.nav')
             }}</span></RouterLink>
         </div>
@@ -468,6 +468,7 @@ import {useLanguage} from '@/composables/use-language.ts';
 import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
 import {useDemandStore} from '@/stores/demand-store.ts';
+import {getDefaultAuthorizedRouteName, hasStoredPlanResource, type PlanResource} from '@/composables/use-plan-resources.ts';
 import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 
@@ -485,6 +486,8 @@ const selectedDemand = ref<Demand | null>(null);
 const detailsModal = ref<HTMLElement | null>(null);
 const authStore = useAuthStore();
 const demandStore = useDemandStore();
+const defaultRouteName = getDefaultAuthorizedRouteName();
+const canAccess = (resource: PlanResource) => hasStoredPlanResource(resource);
 const formCard = ref<HTMLElement | null>(null);
 const editingDemandId = ref<string | null>(null);
 const searchTerm = ref('');
@@ -552,6 +555,11 @@ const overdueCount = computed(() => {
 
 const loadDemands = async (page = 0) => {
   const result = await demandStore.fetchDemands(page);
+
+  if (result.httpStatusCode === 403) {
+    await router.replace({name: 'Access Denied'});
+    return;
+  }
 
   if (result.isError) {
     showErrorToast(toast, t('demands.loadError'));

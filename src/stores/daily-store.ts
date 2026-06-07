@@ -35,14 +35,14 @@ export const useDailyStore = defineStore('daily-store', {
                 Authorization: `Bearer ${localStorage.getItem(TOKEN_STORAGE_KEY) ?? ''}`,
             };
         },
-        async fetchDailyRecords(dateFeedback: string): Promise<ResponseAPI<Daily[] | string>> {
+        async fetchDailyRecords(startDate: string, endDate: string): Promise<ResponseAPI<Daily[] | string>> {
             this.isLoading = true;
 
             try {
                 const {data} = await axios.get<ResponseAPI<DailyResponsePayload>>(
                     `${this.url}/user/daily/by-user`,
                     {
-                        params: {dateFeedback},
+                        params: {startDate, endDate},
                         headers: this.authorizationHeader(),
                     },
                 );

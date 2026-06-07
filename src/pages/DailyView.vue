@@ -56,8 +56,8 @@
             <dd>{{ dailyStore.dailyRecords.length }}</dd>
           </div>
           <div>
-            <dt>{{ t('daily.date') }}</dt>
-            <dd>{{ selectedDateShortLabel }}</dd>
+            <dt>{{ t('daily.period') }}</dt>
+            <dd>{{ selectedRangeLabel }}</dd>
           </div>
           <div>
             <dt>{{ t('daily.words') }}</dt>
@@ -78,13 +78,26 @@
               <h2>{{ t('daily.boardTitle') }}</h2>
             </div>
             <div class="list-heading-actions">
-              <InputText
-                  v-model="selectedDate"
-                  type="date"
-                  class="date-filter"
-                  :aria-label="t('daily.date')"
-                  @change="loadDailyRecords"
-              />
+              <label class="date-range-field">
+                <span>{{ t('daily.startDate') }}</span>
+                <InputText
+                    v-model="startDate"
+                    type="date"
+                    class="date-filter"
+                    :aria-label="t('daily.startDate')"
+                    @change="loadDailyRecords"
+                />
+              </label>
+              <label class="date-range-field">
+                <span>{{ t('daily.endDate') }}</span>
+                <InputText
+                    v-model="endDate"
+                    type="date"
+                    class="date-filter"
+                    :aria-label="t('daily.endDate')"
+                    @change="loadDailyRecords"
+                />
+              </label>
               <Button
                   icon="pi pi-refresh"
                   text
@@ -197,8 +210,31 @@ const {language, t} = useLanguage();
 const formCard = ref<HTMLElement | null>(null);
 const isSubmitting = ref(false);
 
-const todayInput = () => new Date().toISOString().slice(0, 10);
-const selectedDate = ref(todayInput());
+const dateInput = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+const todayInput = () => dateInput(new Date());
+const weekRange = (date = new Date()) => {
+  const start = new Date(date);
+  const day = start.getDay();
+  const daysFromMonday = day === 0 ? 6 : day - 1;
+  start.setDate(start.getDate() - daysFromMonday);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return {
+    startDate: dateInput(start),
+    endDate: dateInput(end),
+  };
+};
+const selectedWeek = weekRange();
+const startDate = ref(selectedWeek.startDate);
+const endDate = ref(selectedWeek.endDate);
 const form = reactive<RegisterDaily>({
   date: todayInput(),
   summary: '',
@@ -219,7 +255,7 @@ const todayLabel = computed(() => new Intl.DateTimeFormat(language.value, {
 const sortedDailyRecords = computed(() =>
     [...dailyStore.dailyRecords].sort((first, second) => second.date.localeCompare(first.date)),
 );
-const selectedDateShortLabel = computed(() => formatDateOnly(selectedDate.value));
+const selectedRangeLabel = computed(() => `${formatDateOnly(startDate.value)} - ${formatDateOnly(endDate.value)}`);
 const wordsCount = computed(() => dailyStore.dailyRecords.reduce((total, {summary}) => {
   const words = summary.trim().split(/\s+/).filter(Boolean);
   return total + words.length;
@@ -230,7 +266,7 @@ const lastRecordLabel = computed(() => {
 });
 
 const loadDailyRecords = async () => {
-  const result = await dailyStore.fetchDailyRecords(selectedDate.value);
+  const result = await dailyStore.fetchDailyRecords(startDate.value, endDate.value);
 
   if (result.isError && typeof result.response === 'string')
     showErrorToast(toast, result.response);
@@ -241,8 +277,9 @@ const saveDaily = async () => {
     return;
 
   isSubmitting.value = true;
+  const savedDate = form.date;
   const result = await dailyStore.registerDaily({
-    date: form.date,
+    date: savedDate,
     summary: form.summary,
   });
 
@@ -253,7 +290,9 @@ const saveDaily = async () => {
   }
 
   showSuccessToast(toast, result.response || t('daily.registerSuccess'));
-  selectedDate.value = form.date;
+  const savedWeek = weekRange(new Date(`${savedDate}T00:00:00`));
+  startDate.value = savedWeek.startDate;
+  endDate.value = savedWeek.endDate;
   form.summary = '';
   form.date = todayInput();
   await loadDailyRecords();
@@ -601,6 +640,16 @@ h2 {
   gap: 8px;
 }
 
+.date-range-field {
+  display: grid;
+  gap: 4px;
+  color: #7b8882;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .list-heading :deep(.p-button) {
   color: #54746a;
 }
@@ -912,7 +961,7 @@ h2 {
     flex-direction: column;
   }
 
-  .list-heading-actions, .date-filter {
+  .list-heading-actions, .date-range-field, .date-filter {
     width: 100%;
   }
 

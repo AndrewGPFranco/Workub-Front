@@ -1,6 +1,7 @@
 import HomeView from '@/pages/HomeView.vue'
 import DailyView from '@/pages/DailyView.vue'
 import DemandsView from '@/pages/DemandsView.vue'
+import FeedbackView from '@/pages/FeedbackView.vue'
 import LoginUserView from '@/pages/LoginUserView.vue'
 import {createRouter, createWebHistory} from 'vue-router'
 import RegisterUserView from '@/pages/RegisterUserView.vue'
@@ -26,6 +27,14 @@ const router = createRouter({
             path: "/daily",
             component: DailyView,
             name: "Daily",
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: "/feedback",
+            component: FeedbackView,
+            name: "Feedback",
             meta: {
                 requiresAuth: true
             }

@@ -1,5 +1,5 @@
 <template>
-  <div id="page-top" class="daily-page">
+  <div id="page-top" class="feedback-page">
     <header class="site-header">
       <nav class="navbar" :aria-label="t('demands.mainNav')">
         <RouterLink :to="{name: 'Demands'}" class="brand" aria-label="Workhub">
@@ -11,10 +11,10 @@
           <RouterLink class="nav-link" :to="{name: 'Demands'}"><i class="pi pi-inbox"/><span>{{
               t('demands.nav')
             }}</span></RouterLink>
-          <RouterLink class="nav-link active" :to="{name: 'Daily'}"><i class="pi pi-calendar-clock"/><span>{{
+          <RouterLink class="nav-link" :to="{name: 'Daily'}"><i class="pi pi-calendar-clock"/><span>{{
               t('daily.nav')
             }}</span></RouterLink>
-          <RouterLink class="nav-link" :to="{name: 'Feedback'}"><i class="pi pi-comments"/><span>{{
+          <RouterLink class="nav-link active" :to="{name: 'Feedback'}"><i class="pi pi-comments"/><span>{{
               t('feedback.nav')
             }}</span></RouterLink>
         </div>
@@ -36,35 +36,35 @@
     <main class="workspace">
       <header class="desk-header">
         <div>
-          <p class="edition">{{ t('daily.personalPanel') }} <span>/</span> {{ todayLabel }}</p>
-          <h1>{{ t('daily.heading') }}<br><em>{{ t('daily.headingEmphasis') }}</em></h1>
+          <p class="edition">{{ t('feedback.personalPanel') }} <span>/</span> {{ todayLabel }}</p>
+          <h1>{{ t('feedback.heading') }}<br><em>{{ t('feedback.headingEmphasis') }}</em></h1>
         </div>
         <div class="header-aside">
-          <p>{{ t('daily.intro') }}</p>
-          <Button :label="t('daily.register')" icon="pi pi-plus" class="new-daily-button" @click="focusForm"/>
+          <p>{{ t('feedback.intro') }}</p>
+          <Button :label="t('feedback.register')" icon="pi pi-plus" class="new-feedback-button" @click="focusForm"/>
         </div>
       </header>
 
-      <section class="pulse" :aria-label="t('daily.currentSlice')">
+      <section class="pulse" :aria-label="t('feedback.currentSlice')">
         <div class="pulse-label">
           <span class="live-dot"/>
-          <strong>{{ t('daily.currentSlice') }}</strong>
+          <strong>{{ t('feedback.currentSlice') }}</strong>
         </div>
         <dl>
           <div>
-            <dt>{{ t('daily.items') }}</dt>
-            <dd>{{ dailyStore.dailyRecords.length }}</dd>
+            <dt>{{ t('feedback.items') }}</dt>
+            <dd>{{ feedbackStore.feedbackRecords.length }}</dd>
           </div>
           <div>
-            <dt>{{ t('daily.date') }}</dt>
-            <dd>{{ selectedDateShortLabel }}</dd>
+            <dt>{{ t('feedback.today') }}</dt>
+            <dd>{{ todayFeedbackCount }}</dd>
           </div>
           <div>
-            <dt>{{ t('daily.words') }}</dt>
-            <dd>{{ wordsCount }}</dd>
+            <dt>{{ t('feedback.people') }}</dt>
+            <dd>{{ peopleCount }}</dd>
           </div>
           <div>
-            <dt>{{ t('daily.lastRecord') }}</dt>
+            <dt>{{ t('feedback.lastRecord') }}</dt>
             <dd>{{ lastRecordLabel }}</dd>
           </div>
         </dl>
@@ -74,50 +74,46 @@
         <section class="list-board">
           <div class="section-heading list-heading">
             <div>
-              <p class="kicker">{{ t('daily.boardKicker') }}</p>
-              <h2>{{ t('daily.boardTitle') }}</h2>
+              <p class="kicker">{{ t('feedback.boardKicker') }}</p>
+              <h2>{{ t('feedback.boardTitle') }}</h2>
             </div>
             <div class="list-heading-actions">
-              <InputText
-                  v-model="selectedDate"
-                  type="date"
-                  class="date-filter"
-                  :aria-label="t('daily.date')"
-                  @change="loadDailyRecords"
-              />
               <Button
                   icon="pi pi-refresh"
                   text
                   rounded
-                  :aria-label="t('daily.refresh')"
-                  :loading="dailyStore.isLoading"
-                  @click="loadDailyRecords"
+                  :aria-label="t('feedback.refresh')"
+                  :loading="feedbackStore.isLoading"
+                  @click="loadFeedbackRecords"
               />
             </div>
           </div>
 
-          <div v-if="dailyStore.isLoading" class="empty-state">
+          <div v-if="feedbackStore.isLoading" class="empty-state">
             <i class="pi pi-spin pi-spinner"/>
-            <span>{{ t('daily.loading') }}</span>
+            <span>{{ t('feedback.loading') }}</span>
           </div>
 
-          <div v-else-if="sortedDailyRecords.length === 0" class="empty-state">
-            <strong>{{ t('daily.emptyTitle') }}</strong>
-            <span>{{ t('daily.emptyDescription') }}</span>
+          <div v-else-if="sortedFeedbackRecords.length === 0" class="empty-state">
+            <strong>{{ t('feedback.emptyTitle') }}</strong>
+            <span>{{ t('feedback.emptyDescription') }}</span>
           </div>
 
-          <div v-else class="daily-list">
-            <article v-for="(daily, index) in sortedDailyRecords" :key="daily.id ?? `${daily.date}-${index}`"
-                     class="daily-item">
-              <span class="daily-index">{{ String(index + 1).padStart(2, '0') }}</span>
-              <div class="daily-main">
-                <div class="daily-title-row">
-                  <h3>{{ formatDateOnly(daily.date) }}</h3>
-                  <span class="date-stamp">{{ daily.date }}</span>
+          <div v-else class="feedback-list">
+            <article v-for="(feedback, index) in sortedFeedbackRecords"
+                     :key="feedback.id ?? `${feedback.date}-${index}`"
+                     class="feedback-item">
+              <span class="feedback-index">{{ String(index + 1).padStart(2, '0') }}</span>
+              <div class="feedback-main">
+                <div class="feedback-title-row">
+                  <h3>{{ feedbackPerson(feedback) }}</h3>
+                  <span class="date-stamp">{{ formatDateOnly(feedback.date) }}</span>
                 </div>
-                <p>{{ daily.summary }}</p>
-                <div class="daily-meta">
-                  <span><i class="pi pi-clock"/>{{ formatCreatedAt(daily.createdAt) }}</span>
+                <p>{{ feedbackText(feedback) }}</p>
+                <div class="feedback-meta">
+                  <span><i class="pi pi-calendar"/>{{ feedback.date }}</span>
+                  <span v-if="feedback.month"><i class="pi pi-bookmark"/>{{ formatMonth(feedback.month) }}</span>
+                  <span><i class="pi pi-clock"/>{{ formatCreatedAt(feedback.createdAt) }}</span>
                 </div>
               </div>
             </article>
@@ -126,23 +122,33 @@
 
         <aside ref="formCard" class="intake">
           <div class="intake-heading">
-            <p class="kicker">{{ t('daily.newKicker') }}</p>
-            <h2>{{ t('daily.new') }}</h2>
-            <p>{{ t('daily.newDescription') }}</p>
+            <p class="kicker">{{ t('feedback.newKicker') }}</p>
+            <h2>{{ t('feedback.new') }}</h2>
+            <p>{{ t('feedback.newDescription') }}</p>
           </div>
 
-          <form class="daily-form" @submit.prevent="saveDaily">
+          <form class="feedback-form" @submit.prevent="saveFeedback">
             <label>
-              <span>{{ t('daily.date') }}</span>
+              <span>{{ t('feedback.date') }}</span>
               <InputText v-model="form.date" type="date" required fluid/>
             </label>
 
             <label>
-              <span>{{ t('daily.summary') }}</span>
+              <span>{{ t('feedback.summary') }}</span>
               <Textarea
-                  v-model.trim="form.summary"
-                  :placeholder="t('daily.summaryPlaceholder')"
-                  rows="9"
+                  v-model.trim="form.feedback"
+                  :placeholder="t('feedback.summaryPlaceholder')"
+                  rows="8"
+                  required
+                  fluid
+              />
+            </label>
+
+            <label>
+              <span>{{ t('feedback.peopleFeedback') }}</span>
+              <InputText
+                  v-model.trim="form.peopleFeedback"
+                  :placeholder="t('feedback.peopleFeedbackPlaceholder')"
                   required
                   fluid
               />
@@ -150,7 +156,7 @@
 
             <Button
                 type="submit"
-                :label="t('daily.save')"
+                :label="t('feedback.save')"
                 icon="pi pi-check"
                 :loading="isSubmitting"
                 :disabled="isSubmitting"
@@ -166,11 +172,11 @@
         <img src="/favicon.png" alt="" class="brand-logo small">
         <div>
           <strong>workhub</strong>
-          <span>{{ t('daily.footerTagline') }}</span>
+          <span>{{ t('feedback.footerTagline') }}</span>
         </div>
       </div>
-      <p>{{ t('daily.footerText') }}</p>
-      <a href="#page-top">{{ t('daily.backToTop') }} <i class="pi pi-arrow-up"/></a>
+      <p>{{ t('feedback.footerText') }}</p>
+      <a href="#page-top">{{ t('feedback.backToTop') }} <i class="pi pi-arrow-up"/></a>
     </footer>
   </div>
 </template>
@@ -186,22 +192,22 @@ import LanguageSelect from '@/components/LanguageSelect.vue';
 import {useLanguage} from '@/composables/use-language.ts';
 import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
-import {useDailyStore} from '@/stores/daily-store.ts';
-import type {RegisterDaily} from '@/types/daily/Daily.ts';
+import {useFeedbackStore} from '@/stores/feedback-store.ts';
+import type {Feedback, RegisterFeedback} from '@/types/feedback/Feedback.ts';
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 
 const toast = useToast();
 const authStore = useAuthStore();
-const dailyStore = useDailyStore();
+const feedbackStore = useFeedbackStore();
 const {language, t} = useLanguage();
 const formCard = ref<HTMLElement | null>(null);
 const isSubmitting = ref(false);
 
 const todayInput = () => new Date().toISOString().slice(0, 10);
-const selectedDate = ref(todayInput());
-const form = reactive<RegisterDaily>({
+const form = reactive<RegisterFeedback>({
   date: todayInput(),
-  summary: '',
+  feedback: '',
+  peopleFeedback: '',
 });
 
 const userName = computed(() => {
@@ -216,34 +222,36 @@ const todayLabel = computed(() => new Intl.DateTimeFormat(language.value, {
   day: '2-digit',
   month: 'long',
 }).format(new Date()));
-const sortedDailyRecords = computed(() =>
-    [...dailyStore.dailyRecords].sort((first, second) => second.date.localeCompare(first.date)),
+const sortedFeedbackRecords = computed(() =>
+    [...feedbackStore.feedbackRecords].sort((first, second) => second.date.localeCompare(first.date)),
 );
-const selectedDateShortLabel = computed(() => formatDateOnly(selectedDate.value));
-const wordsCount = computed(() => dailyStore.dailyRecords.reduce((total, {summary}) => {
-  const words = summary.trim().split(/\s+/).filter(Boolean);
-  return total + words.length;
-}, 0));
+const todayFeedbackCount = computed(() =>
+    feedbackStore.feedbackRecords.filter(({date}) => date === todayInput()).length,
+);
+const peopleCount = computed(() => new Set(
+    feedbackStore.feedbackRecords.map((feedback) => feedbackPerson(feedback).trim()).filter(Boolean),
+).size);
 const lastRecordLabel = computed(() => {
-  const latest = sortedDailyRecords.value[0];
+  const latest = sortedFeedbackRecords.value[0];
   return latest ? formatDateOnly(latest.date) : '-';
 });
 
-const loadDailyRecords = async () => {
-  const result = await dailyStore.fetchDailyRecords(selectedDate.value);
+const loadFeedbackRecords = async () => {
+  const result = await feedbackStore.fetchFeedbackRecords();
 
   if (result.isError && typeof result.response === 'string')
     showErrorToast(toast, result.response);
 };
 
-const saveDaily = async () => {
+const saveFeedback = async () => {
   if (isSubmitting.value)
     return;
 
   isSubmitting.value = true;
-  const result = await dailyStore.registerDaily({
+  const result = await feedbackStore.registerFeedback({
     date: form.date,
-    summary: form.summary,
+    feedback: form.feedback,
+    peopleFeedback: form.peopleFeedback,
   });
 
   if (result.isError) {
@@ -252,11 +260,11 @@ const saveDaily = async () => {
     return;
   }
 
-  showSuccessToast(toast, result.response || t('daily.registerSuccess'));
-  selectedDate.value = form.date;
-  form.summary = '';
+  showSuccessToast(toast, result.response || t('feedback.registerSuccess'));
+  form.feedback = '';
+  form.peopleFeedback = '';
   form.date = todayInput();
-  await loadDailyRecords();
+  await loadFeedbackRecords();
   isSubmitting.value = false;
 };
 
@@ -265,9 +273,25 @@ const formatDateOnly = (date: string) =>
 
 const formatCreatedAt = (date?: string | null) => {
   if (!date)
-    return t('daily.noCreatedAt');
+    return t('feedback.noCreatedAt');
 
   return new Intl.DateTimeFormat(language.value).format(new Date(date));
+};
+
+const hasSwappedFeedbackFields = (feedback: Feedback) =>
+    feedback.summary.length <= 80 && feedback.peopleFeedback.length > feedback.summary.length;
+
+const feedbackPerson = (feedback: Feedback) =>
+    hasSwappedFeedbackFields(feedback) ? feedback.summary : feedback.peopleFeedback;
+
+const feedbackText = (feedback: Feedback) =>
+    hasSwappedFeedbackFields(feedback) ? feedback.peopleFeedback : feedback.summary;
+
+const formatMonth = (month: number | string) => {
+  if (typeof month === 'number')
+    return new Intl.DateTimeFormat(language.value, {month: 'long'}).format(new Date(Date.UTC(2026, month - 1, 1)));
+
+  return month.charAt(0).toUpperCase() + month.slice(1).toLowerCase();
 };
 
 const focusForm = () => {
@@ -280,7 +304,7 @@ const logout = async () => {
 };
 
 onMounted(() => {
-  loadDailyRecords();
+  loadFeedbackRecords();
 });
 </script>
 
@@ -293,7 +317,7 @@ onMounted(() => {
   scroll-behavior: smooth;
 }
 
-.daily-page {
+.feedback-page {
   --panel-strong-bg: #fbfbf7;
   --panel-strong-bg-hover: #f4f4ee;
   --panel-strong-field: #ffffff;
@@ -334,7 +358,7 @@ onMounted(() => {
   pointer-events: auto;
 }
 
-.brand, .navbar-center, .navbar-actions, .profile-copy, .daily-meta, .footer-brand {
+.brand, .navbar-center, .navbar-actions, .profile-copy, .feedback-meta, .footer-brand {
   display: flex;
   align-items: center;
 }
@@ -445,7 +469,7 @@ onMounted(() => {
   padding: 68px clamp(18px, 5vw, 76px) 80px;
 }
 
-.desk-header, .section-heading, .daily-title-row {
+.desk-header, .section-heading, .feedback-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -504,14 +528,14 @@ h2 {
   line-height: 1.65;
 }
 
-.new-daily-button, .submit-button {
+.new-feedback-button, .submit-button {
   border: 0;
   color: #dfff7a;
   background: #124b3a;
   font-weight: 800;
 }
 
-.new-daily-button:not(:disabled):hover, .submit-button:not(:disabled):hover {
+.new-feedback-button:not(:disabled):hover, .submit-button:not(:disabled):hover {
   background: #0b3b2d;
 }
 
@@ -627,11 +651,11 @@ h2 {
   font-size: 1.7rem;
 }
 
-.daily-list {
+.feedback-list {
   display: grid;
 }
 
-.daily-item {
+.feedback-item {
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr);
   gap: 14px;
@@ -639,26 +663,26 @@ h2 {
   border-bottom: 1px solid #e2e3df;
 }
 
-.daily-index {
+.feedback-index {
   color: #b7bdb7;
   font-family: Georgia, serif;
   font-size: 0.92rem;
 }
 
-.daily-main {
+.feedback-main {
   min-width: 0;
 }
 
-.daily-title-row {
+.feedback-title-row {
   justify-content: flex-start;
 }
 
-.daily-item h3 {
+.feedback-item h3 {
   color: #213b33;
   font-size: 0.96rem;
 }
 
-.daily-item p {
+.feedback-item p {
   margin-top: 8px;
   color: #63736d;
   font-size: 0.88rem;
@@ -667,7 +691,7 @@ h2 {
   overflow-wrap: anywhere;
 }
 
-.daily-meta {
+.feedback-meta {
   flex-wrap: wrap;
   gap: 14px;
   margin-top: 12px;
@@ -675,7 +699,7 @@ h2 {
   font-size: 0.68rem;
 }
 
-.daily-meta span {
+.feedback-meta span {
   display: flex;
   gap: 5px;
 }
@@ -720,13 +744,13 @@ h2 {
   font-size: 0.78rem;
 }
 
-.daily-form {
+.feedback-form {
   display: grid;
   gap: 14px;
   margin-top: 22px;
 }
 
-.daily-form label {
+.feedback-form label {
   display: grid;
   gap: 6px;
   min-width: 0;
@@ -736,7 +760,7 @@ h2 {
   letter-spacing: 0.04em;
 }
 
-.daily-form :deep(.p-inputtext), .daily-form :deep(.p-textarea) {
+.feedback-form :deep(.p-inputtext), .feedback-form :deep(.p-textarea) {
   width: 100%;
   border-color: var(--panel-strong-border);
   border-radius: 3px;
@@ -745,12 +769,12 @@ h2 {
   font-size: 0.8rem;
 }
 
-.daily-form :deep(.p-inputtext:enabled:focus), .daily-form :deep(.p-textarea:enabled:focus) {
+.feedback-form :deep(.p-inputtext:enabled:focus), .feedback-form :deep(.p-textarea:enabled:focus) {
   border-color: var(--panel-accent);
   box-shadow: 0 0 0 3px rgba(55, 123, 103, 0.12);
 }
 
-.daily-form :deep(.p-inputtext::placeholder), .daily-form :deep(.p-textarea::placeholder) {
+.feedback-form :deep(.p-inputtext::placeholder), .feedback-form :deep(.p-textarea::placeholder) {
   color: var(--panel-strong-muted);
 }
 
@@ -799,7 +823,7 @@ h2 {
   text-decoration: none;
 }
 
-:global(.app-dark .daily-page) {
+:global(.app-dark .feedback-page) {
   --panel-strong-bg: #171b2b;
   --panel-strong-bg-hover: #111624;
   --panel-strong-field: #101522;
@@ -830,7 +854,7 @@ h2 {
 :global(.app-dark h1),
 :global(.app-dark h2),
 :global(.app-dark .pulse dd),
-:global(.app-dark .daily-item h3) {
+:global(.app-dark .feedback-item h3) {
   color: #e8efec;
 }
 
@@ -865,7 +889,7 @@ h2 {
 }
 
 :global(.app-dark .list-heading),
-:global(.app-dark .daily-item) {
+:global(.app-dark .feedback-item) {
   border-color: rgba(214, 220, 244, 0.12);
 }
 
@@ -945,12 +969,12 @@ h2 {
     padding: 0 8px;
   }
 
-  .daily-item {
+  .feedback-item {
     grid-template-columns: 24px minmax(0, 1fr);
     padding: 17px 15px;
   }
 
-  .daily-title-row {
+  .feedback-title-row {
     align-items: flex-start;
     flex-direction: column;
     gap: 8px;

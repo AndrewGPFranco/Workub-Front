@@ -14,6 +14,9 @@
           <RouterLink class="nav-link" :to="{name: 'Daily'}"><i class="pi pi-calendar-clock"/><span>{{
               t('daily.nav')
             }}</span></RouterLink>
+          <RouterLink class="nav-link" :to="{name: 'Feedback'}"><i class="pi pi-comments"/><span>{{
+              t('feedback.nav')
+            }}</span></RouterLink>
         </div>
 
         <div class="navbar-actions">

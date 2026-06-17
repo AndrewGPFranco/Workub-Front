@@ -226,6 +226,7 @@ const canAccess = (resource: PlanResource) => hasStoredPlanResource(resource);
 const {language, t} = useLanguage();
 const formCard = ref<HTMLElement | null>(null);
 const isSubmitting = ref(false);
+const isInitializingSubdomains = ref(false);
 
 const dateInput = (date: Date) => {
   const year = date.getFullYear();
@@ -341,17 +342,23 @@ const logout = async () => {
 };
 
 watch(
-    () => subdomainStore.selectedSubdomainKey,
+    () => subdomainStore.selectedSubdomainId,
     () => {
-      if (!canAccess('SUBDOMAINS'))
+      if (!canAccess('SUBDOMAINS') || isInitializingSubdomains.value)
         return;
 
       void loadDailyRecords();
     },
 );
 
-onMounted(() => {
-  loadDailyRecords();
+onMounted(async () => {
+  if (canAccess('SUBDOMAINS')) {
+    isInitializingSubdomains.value = true;
+    await subdomainStore.fetchSubdomains();
+    isInitializingSubdomains.value = false;
+  }
+
+  await loadDailyRecords();
 });
 </script>
 

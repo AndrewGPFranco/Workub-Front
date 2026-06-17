@@ -491,6 +491,7 @@ type DemandForm = Omit<RegisterDemand, 'finalizedAt'> & {
 const toast = useToast();
 const isSubmitting = ref(false);
 const isDeleting = ref(false);
+const isInitializingSubdomains = ref(false);
 const isDeleteDialogVisible = ref(false);
 const demandToDelete = ref<Demand | null>(null);
 const deleteModal = ref<HTMLElement | null>(null);
@@ -795,9 +796,9 @@ const logout = async () => {
 };
 
 watch(
-    () => subdomainStore.selectedSubdomainKey,
+    () => subdomainStore.selectedSubdomainId,
     () => {
-      if (!canAccess('SUBDOMAINS'))
+      if (!canAccess('SUBDOMAINS') || isInitializingSubdomains.value)
         return;
 
       searchTerm.value = '';
@@ -805,8 +806,14 @@ watch(
     },
 );
 
-onMounted(() => {
-  loadDemands();
+onMounted(async () => {
+  if (canAccess('SUBDOMAINS')) {
+    isInitializingSubdomains.value = true;
+    await subdomainStore.fetchSubdomains();
+    isInitializingSubdomains.value = false;
+  }
+
+  await loadDemands();
   window.addEventListener('keydown', closeDeleteDialogOnEscape);
 });
 

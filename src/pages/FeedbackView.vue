@@ -219,6 +219,7 @@ const canAccess = (resource: PlanResource) => hasStoredPlanResource(resource);
 const {language, t} = useLanguage();
 const formCard = ref<HTMLElement | null>(null);
 const isSubmitting = ref(false);
+const isInitializingSubdomains = ref(false);
 
 const todayInput = () => new Date().toISOString().slice(0, 10);
 const form = reactive<RegisterFeedback>({
@@ -326,17 +327,23 @@ const logout = async () => {
 };
 
 watch(
-    () => subdomainStore.selectedSubdomainKey,
+    () => subdomainStore.selectedSubdomainId,
     () => {
-      if (!canAccess('SUBDOMAINS'))
+      if (!canAccess('SUBDOMAINS') || isInitializingSubdomains.value)
         return;
 
       void loadFeedbackRecords();
     },
 );
 
-onMounted(() => {
-  loadFeedbackRecords();
+onMounted(async () => {
+  if (canAccess('SUBDOMAINS')) {
+    isInitializingSubdomains.value = true;
+    await subdomainStore.fetchSubdomains();
+    isInitializingSubdomains.value = false;
+  }
+
+  await loadFeedbackRecords();
 });
 </script>
 

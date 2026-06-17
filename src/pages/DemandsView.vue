@@ -8,7 +8,8 @@
         </RouterLink>
 
         <div class="navbar-center">
-          <RouterLink v-if="canAccess('DEMANDS')" class="nav-link active" :to="{name: 'Demands'}"><i class="pi pi-inbox"/><span>{{
+          <RouterLink v-if="canAccess('DEMANDS')" class="nav-link active" :to="{name: 'Demands'}"><i
+              class="pi pi-inbox"/><span>{{
               t('demands.nav')
             }}</span></RouterLink>
           <RouterLink v-if="canAccess('DAILY')" class="nav-link" :to="{name: 'Daily'}"><i class="pi pi-calendar-clock"/><span>{{
@@ -17,9 +18,14 @@
           <RouterLink v-if="canAccess('FEEDBACK')" class="nav-link" :to="{name: 'Feedback'}"><i class="pi pi-comments"/><span>{{
               t('feedback.nav')
             }}</span></RouterLink>
+          <RouterLink v-if="canAccess('SUBDOMAINS')" class="nav-link" :to="{name: 'Subdomain Register'}"><i
+              class="pi pi-sitemap"/><span>{{
+              t('subdomain.nav')
+            }}</span></RouterLink>
         </div>
 
         <div class="navbar-actions">
+          <SubdomainSwitcher v-if="canAccess('SUBDOMAINS')"/>
           <form class="search-form navbar-search" role="search" @submit.prevent="searchDemands">
             <InputText
                 v-model.trim="searchTerm"
@@ -464,11 +470,16 @@ import Textarea from 'primevue/textarea';
 import {useToast} from 'primevue/usetoast';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 import LanguageSelect from '@/components/LanguageSelect.vue';
+import SubdomainSwitcher from '@/components/SubdomainSwitcher.vue';
 import {useLanguage} from '@/composables/use-language.ts';
 import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
 import {useDemandStore} from '@/stores/demand-store.ts';
-import {getDefaultAuthorizedRouteName, hasStoredPlanResource, type PlanResource} from '@/composables/use-plan-resources.ts';
+import {
+  getDefaultAuthorizedRouteName,
+  hasStoredPlanResource,
+  type PlanResource
+} from '@/composables/use-plan-resources.ts';
 import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 

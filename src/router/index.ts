@@ -3,10 +3,11 @@ import DailyView from '@/pages/DailyView.vue'
 import DemandsView from '@/pages/DemandsView.vue'
 import FeedbackView from '@/pages/FeedbackView.vue'
 import LoginUserView from '@/pages/LoginUserView.vue'
-import AccessDeniedView from '@/pages/AccessDeniedView.vue'
 import {createRouter, createWebHistory} from 'vue-router'
 import RegisterUserView from '@/pages/RegisterUserView.vue'
+import AccessDeniedView from '@/pages/AccessDeniedView.vue'
 import {hasValidStoredSession} from '@/stores/auth-store.ts'
+import SubdomainRegisterView from '@/pages/SubdomainRegisterView.vue'
 import {getDefaultAuthorizedRouteName, hasStoredPlanResource} from '@/composables/use-plan-resources.ts'
 
 const router = createRouter({
@@ -45,6 +46,15 @@ const router = createRouter({
             }
         },
         {
+            path: "/subdomains/register",
+            component: SubdomainRegisterView,
+            name: "Subdomain Register",
+            meta: {
+                requiresAuth: true,
+                resource: 'SUBDOMAINS',
+            }
+        },
+        {
             path: "/access-denied",
             component: AccessDeniedView,
             name: "Access Denied",
@@ -80,7 +90,7 @@ router.beforeEach((to) => {
     if (to.meta.requiresAuth && !isAuthenticated)
         return {name: "Login"};
 
-    if (to.meta.resource && !hasStoredPlanResource(to.meta.resource as 'DAILY' | 'DEMANDS' | 'FEEDBACK')) {
+    if (to.meta.resource && !hasStoredPlanResource(to.meta.resource as 'DAILY' | 'DEMANDS' | 'FEEDBACK' | 'SUBDOMAINS')) {
         const defaultRoute = getDefaultAuthorizedRouteName();
 
         if (defaultRoute !== 'Access Denied')

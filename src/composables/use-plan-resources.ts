@@ -1,10 +1,10 @@
-export type PlanResource = 'DAILY' | 'DEMANDS' | 'FEEDBACK';
+export type PlanResource = 'DAILY' | 'DEMANDS' | 'FEEDBACK' | 'SUBDOMAINS';
 
 const TOKEN_STORAGE_KEY = 'token';
-const RESOURCE_BY_ORDINAL: PlanResource[] = ['DAILY', 'DEMANDS', 'FEEDBACK'];
+const RESOURCE_BY_ORDINAL: PlanResource[] = ['DAILY', 'DEMANDS', 'FEEDBACK', 'SUBDOMAINS'];
 
 const decodeBase64Url = (value: string) => {
-    const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+    const base64 = value.replaceAll('-', '+').replaceAll('_', '/');
     const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
 
     return atob(paddedBase64);
@@ -23,7 +23,7 @@ const normalizeResource = (resource: unknown): PlanResource | null => {
 };
 
 const isPlanResource = (resource: string): resource is PlanResource =>
-    resource === 'DAILY' || resource === 'DEMANDS' || resource === 'FEEDBACK';
+    resource === 'DAILY' || resource === 'DEMANDS' || resource === 'FEEDBACK' || resource === 'SUBDOMAINS';
 
 export const getStoredPlanResources = (): PlanResource[] => {
     const token = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -64,6 +64,9 @@ export const getDefaultAuthorizedRouteName = () => {
 
     if (resources.includes('FEEDBACK'))
         return 'Feedback';
+
+    if (resources.includes('SUBDOMAINS'))
+        return 'Subdomain Register';
 
     return 'Access Denied';
 };

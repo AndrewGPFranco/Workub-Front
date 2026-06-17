@@ -19,9 +19,14 @@
               class="pi pi-comments"/><span>{{
               t('feedback.nav')
             }}</span></RouterLink>
+          <RouterLink v-if="canAccess('SUBDOMAINS')" class="nav-link" :to="{name: 'Subdomain Register'}"><i
+              class="pi pi-sitemap"/><span>{{
+              t('subdomain.nav')
+            }}</span></RouterLink>
         </div>
 
         <div class="navbar-actions">
+          <SubdomainSwitcher v-if="canAccess('SUBDOMAINS')"/>
           <LanguageSelect/>
           <ThemeToggle/>
           <span class="navbar-divider"/>
@@ -191,6 +196,7 @@ import Textarea from 'primevue/textarea';
 import {useToast} from 'primevue/usetoast';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 import LanguageSelect from '@/components/LanguageSelect.vue';
+import SubdomainSwitcher from '@/components/SubdomainSwitcher.vue';
 import {useLanguage} from '@/composables/use-language.ts';
 import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';

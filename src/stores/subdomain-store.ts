@@ -104,5 +104,8 @@ export const useSubdomainStore = defineStore('subdomain-store', {
         selectedSubdomain(state): Subdomain | null {
             return state.subdomains.find((subdomain) => getSubdomainKey(subdomain) === state.selectedSubdomainKey) ?? null;
         },
+        selectedSubdomainId(): string | null {
+            return this.selectedSubdomain?.id ?? null;
+        },
     },
 });

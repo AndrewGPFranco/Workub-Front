@@ -196,18 +196,19 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, reactive, ref} from 'vue';
+import router from '@/router';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import {useToast} from 'primevue/usetoast';
-import ThemeToggle from '@/components/ThemeToggle.vue';
-import LanguageSelect from '@/components/LanguageSelect.vue';
-import SubdomainSwitcher from '@/components/SubdomainSwitcher.vue';
-import {useLanguage} from '@/composables/use-language.ts';
-import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
 import {useDailyStore} from '@/stores/daily-store.ts';
+import ThemeToggle from '@/components/ThemeToggle.vue';
+import {useLanguage} from '@/composables/use-language.ts';
+import LanguageSelect from '@/components/LanguageSelect.vue';
+import {useSubdomainStore} from '@/stores/subdomain-store.ts';
+import {computed, onMounted, reactive, ref, watch} from 'vue';
+import SubdomainSwitcher from '@/components/SubdomainSwitcher.vue';
 import {
   getDefaultAuthorizedRouteName,
   hasStoredPlanResource,
@@ -219,6 +220,7 @@ import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 const toast = useToast();
 const authStore = useAuthStore();
 const dailyStore = useDailyStore();
+const subdomainStore = useSubdomainStore();
 const defaultRouteName = getDefaultAuthorizedRouteName();
 const canAccess = (resource: PlanResource) => hasStoredPlanResource(resource);
 const {language, t} = useLanguage();
@@ -337,6 +339,16 @@ const logout = async () => {
   authStore.logout();
   await router.push({name: 'Login'});
 };
+
+watch(
+    () => subdomainStore.selectedSubdomainKey,
+    () => {
+      if (!canAccess('SUBDOMAINS'))
+        return;
+
+      void loadDailyRecords();
+    },
+);
 
 onMounted(() => {
   loadDailyRecords();

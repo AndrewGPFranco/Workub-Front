@@ -462,7 +462,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref} from 'vue';
+import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch} from 'vue';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
@@ -475,6 +475,7 @@ import {useLanguage} from '@/composables/use-language.ts';
 import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
 import {useDemandStore} from '@/stores/demand-store.ts';
+import {useSubdomainStore} from '@/stores/subdomain-store.ts';
 import {
   getDefaultAuthorizedRouteName,
   hasStoredPlanResource,
@@ -497,6 +498,7 @@ const selectedDemand = ref<Demand | null>(null);
 const detailsModal = ref<HTMLElement | null>(null);
 const authStore = useAuthStore();
 const demandStore = useDemandStore();
+const subdomainStore = useSubdomainStore();
 const defaultRouteName = getDefaultAuthorizedRouteName();
 const canAccess = (resource: PlanResource) => hasStoredPlanResource(resource);
 const formCard = ref<HTMLElement | null>(null);
@@ -791,6 +793,17 @@ const logout = async () => {
   authStore.logout();
   await router.push({name: 'Login'});
 };
+
+watch(
+    () => subdomainStore.selectedSubdomainKey,
+    () => {
+      if (!canAccess('SUBDOMAINS'))
+        return;
+
+      searchTerm.value = '';
+      void loadDemands(0);
+    },
+);
 
 onMounted(() => {
   loadDemands();

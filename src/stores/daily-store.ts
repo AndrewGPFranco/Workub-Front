@@ -2,6 +2,7 @@ import axios from 'axios';
 import {defineStore} from 'pinia';
 import ResponseAPI from '@/utils/ResponseAPI.ts';
 import {translate} from '@/composables/use-language.ts';
+import {useSubdomainStore} from '@/stores/subdomain-store.ts';
 import type {PageResponse} from '@/types/http/PageResponse.ts';
 import type {Daily, RegisterDaily} from '@/types/daily/Daily.ts';
 import {getApiErrorMessage, getApiErrorStatus} from '@/utils/api-error.ts';
@@ -35,14 +36,18 @@ export const useDailyStore = defineStore('daily-store', {
                 Authorization: `Bearer ${localStorage.getItem(TOKEN_STORAGE_KEY) ?? ''}`,
             };
         },
+        selectedSubdomainId() {
+            return useSubdomainStore().selectedSubdomainId;
+        },
         async fetchDailyRecords(startDate: string, endDate: string): Promise<ResponseAPI<Daily[] | string>> {
             this.isLoading = true;
+            const subdomainId = this.selectedSubdomainId();
 
             try {
                 const {data} = await axios.get<ResponseAPI<DailyResponsePayload>>(
                     `${this.url}/user/daily/by-user`,
                     {
-                        params: {startDate, endDate},
+                        params: {startDate, endDate, ...(subdomainId ? {subdomainId} : {})},
                         headers: this.authorizationHeader(),
                     },
                 );
@@ -60,9 +65,10 @@ export const useDailyStore = defineStore('daily-store', {
         },
         async registerDaily(daily: RegisterDaily): Promise<ResponseAPI<string>> {
             try {
+                const subdomainId = this.selectedSubdomainId();
                 const {data} = await axios.post<ResponseAPI<string>>(
                     `${this.url}/user/daily/register`,
-                    daily,
+                    {...daily, subdomainId},
                     {headers: this.authorizationHeader()},
                 );
 

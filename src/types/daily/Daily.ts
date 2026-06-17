@@ -4,9 +4,11 @@ export interface Daily {
     summary: string;
     createdAt?: string | null;
     updatedAt?: string | null;
+    subdomainId?: string | null;
 }
 
 export interface RegisterDaily {
     date: string;
     summary: string;
+    subdomainId?: string | null;
 }

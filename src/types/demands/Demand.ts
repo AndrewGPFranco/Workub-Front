@@ -13,6 +13,7 @@ export interface Demand {
     createdAt: string;
     updatedAt: string | null;
     finalizedAt: Date | null;
+    subdomainId?: string | null;
 }
 
 export interface EditDemand {
@@ -23,6 +24,7 @@ export interface EditDemand {
     priority: DemandPriority;
     observationsToReview: string | null;
     finalizedAt: Date | null;
+    subdomainId?: string | null;
 }
 
 export interface RegisterDemand {
@@ -33,4 +35,5 @@ export interface RegisterDemand {
     priority: DemandPriority;
     observationToReview: string | null;
     finalizedAt: Date | null;
+    subdomainId?: string | null;
 }

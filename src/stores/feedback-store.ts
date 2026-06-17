@@ -5,6 +5,7 @@ import {translate} from '@/composables/use-language.ts';
 import type {PageResponse} from '@/types/http/PageResponse.ts';
 import {getApiErrorMessage, getApiErrorStatus} from '@/utils/api-error.ts';
 import type {Feedback, RegisterFeedback} from '@/types/feedback/Feedback.ts';
+import {useSubdomainStore} from '@/stores/subdomain-store.ts';
 
 const TOKEN_STORAGE_KEY = 'token';
 
@@ -35,13 +36,20 @@ export const useFeedbackStore = defineStore('feedback-store', {
                 Authorization: `Bearer ${localStorage.getItem(TOKEN_STORAGE_KEY) ?? ''}`,
             };
         },
+        selectedSubdomainId() {
+            return useSubdomainStore().selectedSubdomainId;
+        },
         async fetchFeedbackRecords(): Promise<ResponseAPI<Feedback[] | string>> {
             this.isLoading = true;
+            const subdomainId = this.selectedSubdomainId();
 
             try {
                 const {data} = await axios.get<ResponseAPI<FeedbackResponsePayload>>(
                     `${this.url}/user/feedback/by-user`,
-                    {headers: this.authorizationHeader()},
+                    {
+                        params: {...(subdomainId ? {subdomainId} : {})},
+                        headers: this.authorizationHeader(),
+                    },
                 );
                 const payload = normalizeFeedbackResponse(data.data);
 
@@ -57,9 +65,10 @@ export const useFeedbackStore = defineStore('feedback-store', {
         },
         async registerFeedback(feedback: RegisterFeedback): Promise<ResponseAPI<string>> {
             try {
+                const subdomainId = this.selectedSubdomainId();
                 const {data} = await axios.post<ResponseAPI<string>>(
                     `${this.url}/user/feedback/register`,
-                    feedback,
+                    {...feedback, subdomainId},
                     {headers: this.authorizationHeader()},
                 );
 

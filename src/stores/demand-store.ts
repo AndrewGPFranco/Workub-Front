@@ -2,6 +2,7 @@ import axios from 'axios';
 import {defineStore} from 'pinia';
 import ResponseAPI from '@/utils/ResponseAPI.ts';
 import {translate} from '@/composables/use-language.ts';
+import {useSubdomainStore} from '@/stores/subdomain-store.ts';
 import type {PageResponse} from '@/types/http/PageResponse.ts';
 import {getApiErrorMessage, getApiErrorStatus} from '@/utils/api-error.ts';
 import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
@@ -26,8 +27,12 @@ export const useDemandStore = defineStore('demand-store', {
                 Authorization: `Bearer ${localStorage.getItem(TOKEN_STORAGE_KEY) ?? ''}`,
             };
         },
+        selectedSubdomainId() {
+            return useSubdomainStore().selectedSubdomainId;
+        },
         async fetchDemands(page = 0): Promise<ResponseAPI<Demand[]>> {
             this.isLoading = true;
+            const subdomainId = this.selectedSubdomainId();
 
             try {
                 const {data} = await axios.get<ResponseAPI<PageResponse<Demand>>>(
@@ -37,6 +42,7 @@ export const useDemandStore = defineStore('demand-store', {
                             page,
                             ...(this.statusFilter ? {status: this.statusFilter} : {}),
                             ...(this.priorityFilter ? {priority: this.priorityFilter} : {}),
+                            ...(subdomainId ? {subdomainId} : {}),
                         },
                         headers: this.authorizationHeader(),
                     },
@@ -57,12 +63,13 @@ export const useDemandStore = defineStore('demand-store', {
         },
         async searchDemand(title: string): Promise<ResponseAPI<Demand[] | string>> {
             this.isLoading = true;
+            const subdomainId = this.selectedSubdomainId();
 
             try {
                 const {data} = await axios.get<ResponseAPI<PageResponse<Demand> | Demand[] | string>>(
                     `${this.url}/demands/search`,
                     {
-                        params: {title},
+                        params: {title, ...(subdomainId ? {subdomainId} : {})},
                         headers: this.authorizationHeader(),
                     },
                 );
@@ -96,9 +103,10 @@ export const useDemandStore = defineStore('demand-store', {
         },
         async registerDemand(demand: RegisterDemand): Promise<ResponseAPI<string>> {
             try {
+                const subdomainId = this.selectedSubdomainId();
                 const {data} = await axios.post<ResponseAPI<string>>(
                     `${this.url}/demands/register`,
-                    demand,
+                    {...demand, subdomainId},
                     {headers: this.authorizationHeader()},
                 );
 
@@ -109,9 +117,10 @@ export const useDemandStore = defineStore('demand-store', {
         },
         async editDemand(id: string, demand: EditDemand): Promise<ResponseAPI<string>> {
             try {
+                const subdomainId = this.selectedSubdomainId();
                 const {data} = await axios.patch<ResponseAPI<string>>(
                     `${this.url}/demands/edit/${id}`,
-                    demand,
+                    {...demand, subdomainId},
                     {headers: this.authorizationHeader()},
                 );
 

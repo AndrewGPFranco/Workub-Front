@@ -1,0 +1,441 @@
+:root {
+  --wh-bg: #f5f7f6;
+  --wh-bg-subtle: #eef2f0;
+  --wh-surface: #ffffff;
+  --wh-surface-raised: #ffffff;
+  --wh-surface-hover: #eef6f2;
+  --wh-text: #202b27;
+  --wh-text-soft: #52605a;
+  --wh-text-muted: #7b8882;
+  --wh-border: #dfe5e1;
+  --wh-border-strong: #cdd6d1;
+  --wh-primary: #168a5b;
+  --wh-primary-hover: #0f734a;
+  --wh-primary-soft: #def2e9;
+  --wh-primary-contrast: #ffffff;
+  --wh-accent: #ef774c;
+  --wh-focus: rgba(22, 138, 91, 0.24);
+  --wh-shadow-sm: 0 8px 24px rgba(24, 43, 35, 0.07);
+  --wh-shadow-md: 0 18px 48px rgba(24, 43, 35, 0.11);
+  --wh-radius-sm: 8px;
+  --wh-radius-md: 12px;
+  --wh-radius-lg: 18px;
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--wh-bg);
+}
+
+:root.app-dark {
+  --wh-bg: #111418;
+  --wh-bg-subtle: #181c21;
+  --wh-surface: #1d2127;
+  --wh-surface-raised: #23282f;
+  --wh-surface-hover: #173528;
+  --wh-text: #edf2ef;
+  --wh-text-soft: #b7c1bc;
+  --wh-text-muted: #8f9a95;
+  --wh-border: #30363d;
+  --wh-border-strong: #3b434b;
+  --wh-primary: #42c987;
+  --wh-primary-hover: #67d99f;
+  --wh-primary-soft: #173528;
+  --wh-primary-contrast: #07140f;
+  --wh-accent: #ff936c;
+  --wh-focus: rgba(66, 201, 135, 0.26);
+  --wh-shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --wh-shadow-md: 0 18px 48px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  scroll-behavior: smooth;
+  background: var(--wh-bg);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100dvh;
+  margin: 0;
+  color: var(--wh-text);
+  background: var(--wh-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--wh-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  color: var(--wh-primary-contrast);
+  background: var(--wh-primary);
+}
+
+/* Shared application shell. These selectors intentionally unify the four
+   authenticated views while their page-specific layouts remain scoped. */
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) {
+  color: var(--wh-text) !important;
+  background: var(--wh-bg) !important;
+  transition: color 180ms ease, background-color 180ms ease;
+}
+
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar {
+  border-color: var(--wh-border) !important;
+  border-radius: var(--wh-radius-md) !important;
+  background: color-mix(in srgb, var(--wh-surface) 94%, transparent) !important;
+  box-shadow: var(--wh-shadow-sm) !important;
+  backdrop-filter: blur(14px);
+}
+
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar-center {
+  border-radius: var(--wh-radius-sm) !important;
+  background: var(--wh-bg-subtle) !important;
+}
+
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .nav-link {
+  border-radius: 6px !important;
+  color: var(--wh-text-soft) !important;
+}
+
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .nav-link:hover,
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .nav-link.active {
+  color: var(--wh-primary) !important;
+  background: var(--wh-primary-soft) !important;
+}
+
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .brand,
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) h1,
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) h2 {
+  color: var(--wh-text) !important;
+}
+
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .kicker,
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .edition {
+  color: var(--wh-text-muted) !important;
+}
+
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .list-board,
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .preview-board,
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .intake {
+  border-color: var(--wh-border) !important;
+  background: var(--wh-surface) !important;
+  box-shadow: var(--wh-shadow-sm);
+}
+
+:is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .site-footer {
+  color: var(--wh-text-muted) !important;
+  background: var(--wh-bg-subtle) !important;
+}
+
+/* Authentication now follows the same neutral/green visual language. */
+:is(.login-page, .register-page) {
+  color: var(--wh-text) !important;
+  background:
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--wh-primary) 15%, transparent), transparent 30%),
+    var(--wh-bg) !important;
+}
+
+:is(.login-page, .register-page) :is(.login-shell, .register-shell) {
+  border-color: var(--wh-border) !important;
+  border-radius: var(--wh-radius-lg) !important;
+  background: var(--wh-surface) !important;
+  box-shadow: var(--wh-shadow-md) !important;
+}
+
+:is(.login-page, .register-page) :is(.login-card, .register-card) {
+  color: var(--wh-text) !important;
+  background: var(--wh-surface) !important;
+}
+
+:is(.login-page, .register-page) :is(.form-heading h2, .auth-switch) {
+  color: var(--wh-text) !important;
+}
+
+:is(.login-page, .register-page) .form-heading p:last-child {
+  color: var(--wh-text-soft) !important;
+}
+
+:is(.login-page, .register-page) :is(.eyebrow, .auth-switch a) {
+  color: var(--wh-primary) !important;
+}
+
+:is(.login-page, .register-page) .form-field label {
+  color: var(--wh-text-soft) !important;
+}
+
+:is(.login-page, .register-page) .form-field .p-inputtext {
+  border-color: var(--wh-border-strong) !important;
+  border-radius: var(--wh-radius-sm) !important;
+  color: var(--wh-text) !important;
+  background: var(--wh-bg-subtle) !important;
+}
+
+:is(.login-page, .register-page) .form-field .p-inputtext:enabled:focus {
+  border-color: var(--wh-primary) !important;
+  box-shadow: 0 0 0 3px var(--wh-focus) !important;
+}
+
+:is(.login-page, .register-page) .submit-button {
+  border-radius: var(--wh-radius-sm) !important;
+  color: var(--wh-primary-contrast) !important;
+  background: var(--wh-primary) !important;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--wh-primary) 22%, transparent) !important;
+}
+
+:is(.login-page, .register-page) .submit-button:not(:disabled):hover {
+  background: var(--wh-primary-hover) !important;
+}
+
+.access-page {
+  color: var(--wh-text) !important;
+  background: var(--wh-bg) !important;
+}
+
+.access-page .access-shell {
+  border-color: var(--wh-border) !important;
+  border-radius: var(--wh-radius-md) !important;
+  background: var(--wh-surface) !important;
+  box-shadow: var(--wh-shadow-md) !important;
+}
+
+.access-page :is(.brand, h1) { color: var(--wh-text) !important; }
+.access-page :is(.kicker, .access-copy p:last-child) { color: var(--wh-text-soft) !important; }
+.access-page .access-actions .p-button { border-color: var(--wh-primary) !important; background: var(--wh-primary) !important; }
+.access-page .access-actions .p-button-text { color: var(--wh-primary) !important; background: transparent !important; }
+
+/* Desktop sidebar, derived from the reference application's compact navigation.
+   Existing page markup remains intact so routing and permissions stay unchanged. */
+@media (min-width: 769px) {
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) {
+    --wh-nav-width: 112px;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .site-header {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 100;
+    width: var(--wh-nav-width);
+    padding: 0 !important;
+    pointer-events: auto !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar {
+    display: flex !important;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0 !important;
+    flex-direction: column;
+    justify-content: flex-start !important;
+    gap: 14px;
+    padding: 18px 10px 12px !important;
+    overflow-x: visible;
+    overflow-y: auto;
+    border-width: 0 1px 0 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .brand {
+    min-height: 52px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px !important;
+    font-size: 0.74rem !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .brand-logo:not(.small) {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar-center {
+    display: flex !important;
+    width: 100%;
+    flex-direction: column;
+    gap: 4px !important;
+    padding: 5px !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .nav-link {
+    width: 100%;
+    min-height: 58px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px !important;
+    padding: 7px 4px !important;
+    font-size: 0.68rem !important;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .nav-link i {
+    font-size: 1.15rem;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .nav-link.active {
+    box-shadow: inset 3px 0 0 var(--wh-primary);
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 4px !important;
+    margin-top: auto;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar-actions > .p-button,
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar-actions > .theme-toggle {
+    width: 42px !important;
+    height: 42px !important;
+    flex: 0 0 42px;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar-divider,
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .profile-copy {
+    display: none !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .avatar {
+    width: 38px !important;
+    height: 38px !important;
+    flex: 0 0 38px !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .language-select {
+    width: 78px;
+    justify-content: center;
+    padding: 9px 4px;
+    border-radius: var(--wh-radius-sm);
+    color: var(--wh-text-soft);
+    background: var(--wh-bg-subtle);
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .language-select select {
+    width: 46px;
+    font-size: 0.68rem;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .subdomain-switcher {
+    width: 82px !important;
+    min-width: 82px !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .subdomain-option.compact strong {
+    display: none;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) > .workspace {
+    width: calc(100% - var(--wh-nav-width));
+    max-width: 1440px !important;
+    margin-right: 0 !important;
+    margin-left: calc(
+      var(--wh-nav-width) + max(0px, (100vw - var(--wh-nav-width) - 1440px) / 2)
+    ) !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) > .site-footer {
+    width: calc(100% - var(--wh-nav-width));
+    max-width: none !important;
+    margin-left: var(--wh-nav-width) !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .desk-header {
+    width: 100%;
+    align-items: center;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .desk-header > :first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .header-aside {
+    flex: 0 1 380px;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .pulse,
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .content-grid {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) {
+    padding-bottom: 76px;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .site-header {
+    position: fixed !important;
+    inset: auto 0 0 !important;
+    z-index: 100;
+    padding: 0 !important;
+    pointer-events: auto !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar {
+    min-height: 72px !important;
+    padding: 7px 8px !important;
+    border-width: 1px 0 0 !important;
+    border-radius: 0 !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar > .brand,
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar-actions > :not(.theme-toggle):not(.p-button) {
+    display: none !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar-center {
+    flex: 1;
+    justify-content: space-around;
+    padding: 3px !important;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .nav-link {
+    min-width: 50px;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 4px !important;
+    padding: 6px 3px !important;
+    font-size: 0.64rem !important;
+    text-align: center;
+  }
+
+  :is(.demands-page, .daily-page, .feedback-page, .subdomain-page) .navbar-actions {
+    flex: 0 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

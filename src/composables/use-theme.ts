@@ -4,6 +4,8 @@ export type Theme = 'light' | 'dark';
 
 const THEME_STORAGE_KEY = 'workhub-theme';
 const theme = ref<Theme>('light');
+let mediaQuery: MediaQueryList | null = null;
+let isListeningToSystem = false;
 
 const getPreferredTheme = (): Theme => {
     const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
@@ -21,7 +23,20 @@ const applyTheme = (value: Theme) => {
     document.documentElement.style.colorScheme = value;
 };
 
-export const initializeTheme = () => applyTheme(getPreferredTheme());
+const handleSystemThemeChange = (event: MediaQueryListEvent) => {
+    if (!localStorage.getItem(THEME_STORAGE_KEY))
+        applyTheme(event.matches ? 'dark' : 'light');
+};
+
+export const initializeTheme = () => {
+    applyTheme(getPreferredTheme());
+
+    if (!isListeningToSystem) {
+        mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        mediaQuery.addEventListener('change', handleSystemThemeChange);
+        isListeningToSystem = true;
+    }
+};
 
 export const useTheme = () => {
     const isDark = computed(() => theme.value === 'dark');

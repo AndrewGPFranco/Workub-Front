@@ -26,33 +26,6 @@
 
         <div class="navbar-actions">
           <SubdomainSwitcher v-if="canAccess('SUBDOMAINS')"/>
-          <form class="search-form navbar-search" role="search" @submit.prevent="searchDemands">
-            <InputText
-                v-model.trim="searchTerm"
-                type="search"
-                :placeholder="t('demands.searchPlaceholder')"
-                :aria-label="t('demands.search')"
-                class="search-input"
-            />
-            <Button
-                icon="pi pi-search"
-                type="submit"
-                text
-                rounded
-                :aria-label="t('demands.search')"
-                :loading="demandStore.isLoading && isSearching"
-            />
-            <Button
-                v-if="searchTerm"
-                icon="pi pi-times"
-                type="button"
-                text
-                rounded
-                :aria-label="t('demands.clearSearch')"
-                :disabled="demandStore.isLoading"
-                @click="clearSearch"
-            />
-          </form>
           <LanguageSelect/>
           <ThemeToggle/>
           <span class="navbar-divider"/>
@@ -74,6 +47,30 @@
         </div>
         <div class="header-aside">
           <p>{{ t('demands.intro') }}</p>
+          <form class="search-form demand-search" role="search" @submit.prevent="searchDemands">
+            <InputText
+                v-model.trim="searchTerm"
+                type="search"
+                :placeholder="t('demands.searchPlaceholder')"
+                :aria-label="t('demands.search')"
+                class="search-input"
+            />
+            <Button
+                icon="pi pi-search"
+                type="submit"
+                :aria-label="t('demands.search')"
+                :loading="demandStore.isLoading && isSearching"
+            />
+            <Button
+                v-if="searchTerm"
+                icon="pi pi-times"
+                type="button"
+                text
+                :aria-label="t('demands.clearSearch')"
+                :disabled="demandStore.isLoading"
+                @click="clearSearch"
+            />
+          </form>
           <Button :label="t('demands.register')" icon="pi pi-plus" class="new-demand-button" @click="focusForm"/>
         </div>
       </header>
@@ -1034,7 +1031,8 @@ h1 em {
 
 .header-aside {
   display: grid;
-  max-width: 270px;
+  width: min(360px, 100%);
+  max-width: 360px;
   justify-items: start;
   gap: 20px;
   padding-top: 30px;
@@ -1157,8 +1155,13 @@ h2 {
   gap: 4px;
 }
 
-.navbar-search {
-  min-width: 230px;
+.demand-search {
+  width: min(360px, 100%);
+  padding: 5px;
+  border: 1px solid var(--wh-border);
+  border-radius: var(--wh-radius-md);
+  background: var(--wh-surface);
+  box-shadow: var(--wh-shadow-sm);
 }
 
 .search-input {
@@ -1876,9 +1879,8 @@ h2 {
     display: none;
   }
 
-  .navbar-search {
-    width: min(180px, 38vw);
-    min-width: 118px;
+  .demand-search {
+    width: 100%;
   }
 
   .nav-link {

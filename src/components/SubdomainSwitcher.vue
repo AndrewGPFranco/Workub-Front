@@ -9,6 +9,7 @@
         :loading="subdomainStore.isLoading"
         :disabled="subdomainStore.isLoading || subdomainOptions.length === 0"
         :aria-label="t('subdomain.select')"
+        overlay-class="subdomain-select-overlay"
         class="subdomain-select"
     >
       <template #value="{value, placeholder}">
@@ -125,20 +126,6 @@ onMounted(() => {
   max-width: 104px;
 }
 
-:global(.app-dark) .subdomain-switcher :deep(.p-select) {
-  border-color: rgba(214, 220, 244, 0.14);
-  background: rgba(16, 21, 34, 0.78);
-}
-
-:global(.app-dark) .subdomain-option span {
-  color: #70c6ac;
-  background: #101522;
-}
-
-:global(.app-dark) .subdomain-option strong {
-  color: #e8efec;
-}
-
 @media (max-width: 700px) {
   .subdomain-switcher {
     min-width: 46px;
@@ -152,5 +139,43 @@ onMounted(() => {
   .subdomain-option.compact strong {
     display: none;
   }
+}
+</style>
+
+<style>
+html.app-dark .subdomain-switcher .p-select {
+  border-color: rgba(214, 220, 244, 0.14);
+  background: rgba(16, 21, 34, 0.78);
+}
+
+html.app-dark .subdomain-switcher .p-select-dropdown,
+html.app-dark .subdomain-switcher .p-select-label,
+html.app-dark .subdomain-switcher .subdomain-option strong,
+html.app-dark .subdomain-select-overlay .subdomain-option strong {
+  color: #e8efec;
+}
+
+html.app-dark .subdomain-switcher .subdomain-option span,
+html.app-dark .subdomain-select-overlay .subdomain-option span {
+  color: #70c6ac;
+  background: #101522;
+}
+
+html.app-dark .subdomain-select-overlay {
+  border-color: rgba(214, 220, 244, 0.14);
+  background: #101522;
+}
+
+html.app-dark .subdomain-select-overlay .p-select-option {
+  color: #e8efec;
+}
+
+html.app-dark .subdomain-select-overlay .p-select-option:not(.p-select-option-selected):not(.p-disabled).p-focus {
+  background: rgba(112, 198, 172, 0.12);
+}
+
+html.app-dark .subdomain-select-overlay .p-select-option-selected {
+  color: #e8efec;
+  background: rgba(55, 123, 103, 0.42);
 }
 </style>

@@ -264,6 +264,38 @@
               />
             </label>
 
+            <fieldset v-if="!editingDemandId" class="observations-fieldset">
+              <legend>{{ t('demands.observations') }} <small>{{ t('demands.optional') }}</small></legend>
+              <div
+                  v-for="(observation, index) in form.observations"
+                  :key="index"
+                  class="observation-input-row"
+              >
+                <Textarea
+                    v-model.trim="observation.textObservation"
+                    :placeholder="t('demands.observationPlaceholder')"
+                    rows="3"
+                    fluid
+                />
+                <Button
+                    type="button"
+                    icon="pi pi-trash"
+                    text
+                    severity="danger"
+                    :aria-label="t('demands.removeObservation')"
+                    @click="removeFormObservation(index)"
+                />
+              </div>
+              <Button
+                  type="button"
+                  :label="t('demands.addObservation')"
+                  icon="pi pi-plus"
+                  text
+                  class="add-observation-button"
+                  @click="addFormObservation"
+              />
+            </fieldset>
+
             <label>
               <span>{{ t('demands.deadline') }}</span>
               <InputText v-model="form.deadline" type="date" fluid/>
@@ -369,6 +401,60 @@
               <section v-if="selectedDemand.observationsToReview">
                 <h3>{{ t('demands.reviewNote') }}</h3>
                 <p>{{ selectedDemand.observationsToReview }}</p>
+              </section>
+
+              <section class="details-observations">
+                <h3>{{ t('demands.observations') }}</h3>
+                <ul v-if="selectedDemand.observations.length" class="observations-list">
+                  <li
+                      v-for="observation in selectedDemand.observations"
+                      :key="`${observation.createdAt}:${observation.textObservation}`"
+                  >
+                    <span>{{ observation.textObservation }}</span>
+                    <time :datetime="observation.createdAt">{{ formatDate(observation.createdAt) }}</time>
+                  </li>
+                </ul>
+                <p v-else class="empty-observations">{{ t('demands.noObservations') }}</p>
+
+                <form class="new-observation-form" @submit.prevent="addObservationToSelectedDemand">
+                  <div
+                      v-for="(_, index) in newObservationTexts"
+                      :key="index"
+                      class="observation-input-row"
+                  >
+                    <Textarea
+                        v-model.trim="newObservationTexts[index]"
+                        :placeholder="t('demands.observationPlaceholder')"
+                        rows="3"
+                        required
+                        fluid
+                    />
+                    <Button
+                        v-if="newObservationTexts.length > 1"
+                        type="button"
+                        icon="pi pi-trash"
+                        text
+                        severity="danger"
+                        :aria-label="t('demands.removeObservation')"
+                        @click="removeNewObservation(index)"
+                    />
+                  </div>
+                  <Button
+                      type="button"
+                      :label="t('demands.addAnotherObservation')"
+                      icon="pi pi-plus"
+                      text
+                      class="add-another-observation"
+                      @click="addNewObservation"
+                  />
+                  <Button
+                      type="submit"
+                      :label="t('demands.saveObservations')"
+                      icon="pi pi-plus"
+                      :loading="isAddingObservation"
+                      :disabled="isAddingObservation || !hasNewObservations"
+                  />
+                </form>
               </section>
 
               <dl class="details-meta">
@@ -481,13 +567,16 @@ import {
 import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 
-type DemandForm = Omit<RegisterDemand, 'finalizedAt'> & {
+type DemandForm = Omit<RegisterDemand, 'observations'> & {
+  observations: Array<{textObservation: string}>;
   finalizedAt: string | null;
 };
 
 const toast = useToast();
 const isSubmitting = ref(false);
 const isDeleting = ref(false);
+const isAddingObservation = ref(false);
+const newObservationTexts = ref<string[]>(['']);
 const isInitializingSubdomains = ref(false);
 const isDeleteDialogVisible = ref(false);
 const demandToDelete = ref<Demand | null>(null);
@@ -539,6 +628,7 @@ const emptyForm = (): DemandForm => ({
   status: 'PENDING',
   priority: 'MEDIUM',
   observationToReview: null,
+  observations: [],
   finalizedAt: null
 });
 
@@ -635,8 +725,17 @@ const saveDemand = async () => {
 };
 
 const toRegisterDemand = (): RegisterDemand => ({
-  ...form,
-  finalizedAt: parseInputDate(form.finalizedAt),
+  title: form.title,
+  description: form.description,
+  deadline: form.deadline,
+  status: form.status,
+  priority: form.priority,
+  observationToReview: form.observationToReview,
+  observations: {
+    textObservations: form.observations
+        .map(({textObservation}) => textObservation.trim())
+        .filter(Boolean),
+  },
 });
 
 const toEditDemand = (): EditDemand => ({
@@ -658,6 +757,7 @@ const startEditing = (demand: Demand) => {
     status: demand.status,
     priority: demand.priority,
     observationToReview: demand.observationsToReview ?? null,
+    observations: [],
     finalizedAt: toInputDate(demand.finalizedAt)
   });
   focusForm();
@@ -677,12 +777,54 @@ const confirmDeletion = async (demand: Demand) => {
 
 const openDemandDetails = async (demand: Demand) => {
   selectedDemand.value = demand;
+  newObservationTexts.value = [''];
   await nextTick();
   detailsModal.value?.focus();
 };
 
 const closeDemandDetails = () => {
   selectedDemand.value = null;
+  newObservationTexts.value = [''];
+};
+
+const addFormObservation = () => {
+  form.observations.push({textObservation: ''});
+};
+
+const removeFormObservation = (index: number) => {
+  form.observations.splice(index, 1);
+};
+
+const hasNewObservations = computed(() => newObservationTexts.value.some((text) => text.trim()));
+
+const addNewObservation = () => {
+  newObservationTexts.value.push('');
+};
+
+const removeNewObservation = (index: number) => {
+  newObservationTexts.value.splice(index, 1);
+};
+
+const addObservationToSelectedDemand = async () => {
+  const demand = selectedDemand.value;
+  const textObservations = newObservationTexts.value.map((text) => text.trim()).filter(Boolean);
+  if (!demand || !textObservations.length || isAddingObservation.value)
+    return;
+
+  isAddingObservation.value = true;
+  const result = await demandStore.addObservation({demandId: demand.id, textObservations});
+
+  if (result.isError) {
+    showErrorToast(toast, result.response);
+    isAddingObservation.value = false;
+    return;
+  }
+
+  newObservationTexts.value = [''];
+  showSuccessToast(toast, result.response);
+  await loadDemands(demandStore.currentPage);
+  selectedDemand.value = demandStore.demands.find(({id}) => id === demand.id) ?? demand;
+  isAddingObservation.value = false;
 };
 
 const editSelectedDemand = () => {
@@ -1421,6 +1563,36 @@ h2 {
   font-size: 0.64rem;
 }
 
+.observations-fieldset {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--panel-strong-border);
+  border-radius: 4px;
+}
+
+.observations-fieldset legend {
+  padding: 0 5px;
+  color: var(--panel-strong-text);
+  font-size: 0.71rem;
+  font-weight: 800;
+}
+
+.observation-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: start;
+}
+
+.add-observation-button {
+  width: fit-content;
+  padding-inline: 0;
+  color: var(--panel-accent);
+}
+
 .form-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1557,6 +1729,53 @@ h2 {
   line-height: 1.65;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.observations-list {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.observations-list li {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border-left: 3px solid #6e63d9;
+  color: #52645d;
+  background: #f3f2ed;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.observations-list time {
+  color: #84918b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: normal;
+}
+
+.details-modal-content .empty-observations {
+  color: #8a9690;
+  font-size: 0.82rem;
+}
+
+.new-observation-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.new-observation-form :deep(.p-button) {
+  justify-self: end;
+}
+
+.new-observation-form .add-another-observation {
+  justify-self: start;
+  padding-inline: 0;
 }
 
 .details-meta {
@@ -1838,6 +2057,20 @@ h2 {
 
 :global(.app-dark .details-modal-content p) {
   color: #c5ccdf;
+}
+
+:global(.app-dark .observations-list li) {
+  border-left-color: #8876ff;
+  color: #dbe3df;
+  background: #111624;
+}
+
+:global(.app-dark .observations-list time) {
+  color: #8993ad;
+}
+
+:global(.app-dark .details-modal-content .empty-observations) {
+  color: #8993ad;
 }
 
 :global(.app-dark .details-meta div) {

@@ -5,7 +5,14 @@ import {translate} from '@/composables/use-language.ts';
 import {useSubdomainStore} from '@/stores/subdomain-store.ts';
 import type {PageResponse} from '@/types/http/PageResponse.ts';
 import {getApiErrorMessage, getApiErrorStatus} from '@/utils/api-error.ts';
-import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
+import type {
+    Demand,
+    DemandPriority,
+    DemandStatus,
+    EditDemand,
+    InputObservation,
+    RegisterDemand,
+} from '@/types/demands/Demand.ts';
 
 const TOKEN_STORAGE_KEY = 'token';
 
@@ -127,6 +134,19 @@ export const useDemandStore = defineStore('demand-store', {
                 return new ResponseAPI(data.httpStatusCode, data.data);
             } catch (error) {
                 return new ResponseAPI(500, getApiErrorMessage(error, translate('demands.editError')));
+            }
+        },
+        async addObservation(observation: InputObservation): Promise<ResponseAPI<string>> {
+            try {
+                const {data} = await axios.patch<ResponseAPI<string>>(
+                    `${this.url}/demands/add-observations`,
+                    observation,
+                    {headers: this.authorizationHeader()},
+                );
+
+                return new ResponseAPI(data.httpStatusCode, data.data);
+            } catch (error) {
+                return new ResponseAPI(500, getApiErrorMessage(error, translate('demands.observationAddError')));
             }
         },
         async deleteDemand(id: string): Promise<ResponseAPI<string>> {

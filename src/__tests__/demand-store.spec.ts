@@ -93,6 +93,12 @@ describe('demand store', () => {
             createdAt: '2026-06-01T09:17:01.215891',
             updatedAt: '2026-06-02T22:59:45.943148',
             observationsToReview: null,
+            observations: [
+                {
+                    textObservation: 'Validar os campos',
+                    createdAt: '2026-06-01T09:20:00Z',
+                },
+            ],
             finalizedAt: '2026-06-02',
         };
         mockedAxios.get.mockResolvedValueOnce({
@@ -112,5 +118,49 @@ describe('demand store', () => {
 
         expect(store.demands).toEqual([demand]);
         expect(store.totalElements).toBe(1);
+    });
+
+    it('adds an observation to an existing demand', async () => {
+        const store = useDemandStore();
+        const demandId = '84ffee53-03cd-4816-a0d7-9e4e48817c3f';
+        mockedAxios.patch.mockResolvedValueOnce({
+            data: {httpStatusCode: 201, data: 'Observação adicionada com sucesso!'},
+        });
+
+        await store.addObservation({
+            demandId,
+            textObservations: ['Validar com o time de produto', 'Documentar a decisão'],
+        });
+
+        expect(mockedAxios.patch).toHaveBeenCalledWith(
+            `${store.url}/demands/add-observations`,
+            {demandId, textObservations: ['Validar com o time de produto', 'Documentar a decisão']},
+            expect.objectContaining({headers: expect.any(Object)}),
+        );
+    });
+
+    it('registers a demand with the observations object', async () => {
+        const store = useDemandStore();
+        mockedAxios.post.mockResolvedValueOnce({
+            data: {httpStatusCode: 201, data: 'Demanda registrada com sucesso!'},
+        });
+
+        await store.registerDemand({
+            title: 'Revisar endpoint',
+            description: 'Revisar contrato da API',
+            deadline: null,
+            status: 'PENDING',
+            priority: 'MEDIUM',
+            observationToReview: null,
+            observations: {textObservations: ['Validar os campos', 'Atualizar documentação']},
+        });
+
+        expect(mockedAxios.post).toHaveBeenCalledWith(
+            `${store.url}/demands/register`,
+            expect.objectContaining({
+                observations: {textObservations: ['Validar os campos', 'Atualizar documentação']},
+            }),
+            expect.objectContaining({headers: expect.any(Object)}),
+        );
     });
 });

@@ -71,7 +71,7 @@
                 @click="clearSearch"
             />
           </form>
-          <Button :label="t('demands.register')" icon="pi pi-plus" class="new-demand-button" @click="focusForm"/>
+          <Button :label="t('demands.register')" icon="pi pi-plus" class="new-demand-button" @click="openDemandCreation"/>
         </div>
       </header>
 
@@ -104,24 +104,14 @@
         </dl>
       </section>
 
-      <section class="content-grid">
+      <section :class="['content-grid', {'editing-grid': editingDemandId}]">
         <section id="demands-list" class="list-board">
           <div class="section-heading list-heading">
             <div>
-              <p class="kicker">{{ t('demands.queue') }}</p>
-              <h2>{{ t('demands.onTable') }}</h2>
+              <p class="kicker">{{ t('demands.boardKicker') }}</p>
+              <h2>{{ t('demands.boardTitle') }}</h2>
             </div>
             <div class="list-heading-actions">
-              <Select
-                  v-model="selectedStatusFilter"
-                  :options="statusFilterOptions"
-                  option-label="label"
-                  option-value="value"
-                  :placeholder="t('demands.filterByStatus')"
-                  :aria-label="t('demands.filterByStatus')"
-                  class="status-filter"
-                  @change="applyFilters"
-              />
               <Select
                   v-model="selectedPriorityFilter"
                   :options="priorityFilterOptions"
@@ -153,54 +143,77 @@
             <span>{{ t('demands.emptyDescription') }}</span>
           </div>
 
-          <div v-else class="demand-list">
-            <article
-                v-for="(demand, index) in demandStore.demands"
-                :key="demand.id"
-                class="demand-item"
-                role="button"
-                tabindex="0"
-                :aria-label="`${t('demands.viewDetails')}: ${demand.title}`"
-                @click="openDemandDetails(demand)"
-                @keydown.enter.self="openDemandDetails(demand)"
-                @keydown.space.self.prevent="openDemandDetails(demand)"
+          <div v-else class="kanban-board" :aria-label="t('demands.boardTitle')">
+            <section
+                v-for="column in boardColumns"
+                :key="column.status"
+                :class="['kanban-column', `column-${column.status.toLowerCase()}`, {
+                  'is-drop-target': dropTargetStatus === column.status,
+                }]"
+                @dragover.prevent="setDropTarget(column.status)"
+                @dragleave.self="clearDropTarget(column.status)"
+                @drop.prevent="dropDemand(column.status)"
             >
-              <span class="demand-index">{{ String(index + 1).padStart(2, '0') }}</span>
-              <div class="demand-main">
-                <div class="demand-title-row">
-                  <h3>{{ demand.title }}</h3>
-                  <span :class="['priority-mark', `priority-${demand.priority.toLowerCase()}`]">
-                    {{ priorityLabels[demand.priority] }}
-                  </span>
+              <header class="kanban-column-header">
+                <div>
+                  <span class="column-indicator"/>
+                  <h3>{{ column.label }}</h3>
+                  <span class="column-count">{{ column.demands.length }}</span>
                 </div>
-                <p>{{ demand.description }}</p>
-                <p v-if="demand.observationsToReview" class="review-note">
-                  <i class="pi pi-bookmark-fill"/>
-                  {{ demand.observationsToReview }}
-                </p>
-                <div class="demand-meta">
-                  <span><i class="pi pi-calendar"/>{{ formatDeadline(demand.deadline) }}</span>
-                  <span><i class="pi pi-clock"/>{{ formatDate(demand.createdAt) }}</span>
-                  <span v-if="demand.finalizedAt"><i
-                      class="pi pi-check-circle"/>{{ formatOptionalDate(demand.finalizedAt) }}</span>
-                </div>
-              </div>
-              <div class="demand-actions">
-                <span :class="['status-stamp', `status-${demand.status.toLowerCase()}`]">
-                  {{ statusLabels[demand.status] }}
-                </span>
-                <Button icon="pi pi-pencil" text rounded :aria-label="t('demands.edit')"
-                        @click.stop="startEditing(demand)"/>
                 <Button
-                    icon="pi pi-trash"
+                    icon="pi pi-plus"
                     text
                     rounded
-                    severity="danger"
-                    :aria-label="t('demands.delete')"
-                    @click.stop="confirmDeletion(demand)"
+                    :aria-label="`${t('demands.addToColumn')} ${column.label}`"
+                    @click="prepareDemandForStatus(column.status)"
                 />
+              </header>
+
+              <div class="kanban-card-list">
+                <p v-if="column.demands.length === 0" class="column-empty">
+                  {{ t('demands.emptyColumn') }}
+                </p>
+                <article
+                    v-for="demand in column.demands"
+                    :key="demand.id"
+                    :class="['kanban-card', {'is-moving': movingDemandId === demand.id}]"
+                    draggable="true"
+                    tabindex="0"
+                    role="button"
+                    :aria-label="`${t('demands.viewDetails')}: ${demand.title}`"
+                    @dragstart="startDragging(demand, $event)"
+                    @dragend="finishDragging"
+                    @click="openDemandDetails(demand)"
+                    @keydown.enter.self="openDemandDetails(demand)"
+                    @keydown.space.self.prevent="openDemandDetails(demand)"
+                >
+                  <div class="card-topline">
+                    <span :class="['priority-mark', `priority-${demand.priority.toLowerCase()}`]">
+                      {{ priorityLabels[demand.priority] }}
+                    </span>
+                    <div class="card-actions">
+                      <Button icon="pi pi-pencil" text rounded :aria-label="t('demands.edit')"
+                              @click.stop="startEditing(demand)"/>
+                      <Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('demands.delete')"
+                              @click.stop="confirmDeletion(demand)"/>
+                    </div>
+                  </div>
+                  <h4>{{ demand.title }}</h4>
+                  <p class="card-description">{{ demand.description }}</p>
+                  <p v-if="demand.observationsToReview" class="review-note">
+                    <i class="pi pi-bookmark-fill"/>{{ demand.observationsToReview }}
+                  </p>
+                  <footer class="kanban-card-footer">
+                    <span :class="{'is-overdue': isDemandOverdue(demand)}">
+                      <i class="pi pi-calendar"/>{{ formatDeadline(demand.deadline) }}
+                    </span>
+                    <span v-if="demand.observations.length" :title="t('demands.observations')">
+                      <i class="pi pi-comment"/>{{ demand.observations.length }}
+                    </span>
+                  </footer>
+                </article>
               </div>
-            </article>
+            </section>
           </div>
 
           <footer class="pagination">
@@ -228,13 +241,11 @@
           </footer>
         </section>
 
-        <aside ref="formCard" class="intake">
+        <aside v-if="editingDemandId" ref="formCard" class="intake">
           <div class="intake-heading">
-            <p class="kicker">{{ editingDemandId ? t('demands.editKicker') : t('demands.newKicker') }}</p>
-            <h2>{{ editingDemandId ? t('demands.edit') : t('demands.new') }}</h2>
-            <p>{{
-                editingDemandId ? t('demands.editDescription') : t('demands.newDescription')
-              }}</p>
+            <p class="kicker">{{ t('demands.editKicker') }}</p>
+            <h2>{{ t('demands.edit') }}</h2>
+            <p>{{ t('demands.editDescription') }}</p>
           </div>
 
           <form class="demand-form" @submit.prevent="saveDemand">
@@ -263,38 +274,6 @@
                   fluid
               />
             </label>
-
-            <fieldset v-if="!editingDemandId" class="observations-fieldset">
-              <legend>{{ t('demands.observations') }} <small>{{ t('demands.optional') }}</small></legend>
-              <div
-                  v-for="(observation, index) in form.observations"
-                  :key="index"
-                  class="observation-input-row"
-              >
-                <Textarea
-                    v-model="observation.textObservation"
-                    :placeholder="t('demands.observationPlaceholder')"
-                    rows="3"
-                    fluid
-                />
-                <Button
-                    type="button"
-                    icon="pi pi-trash"
-                    text
-                    severity="danger"
-                    :aria-label="t('demands.removeObservation')"
-                    @click="removeFormObservation(index)"
-                />
-              </div>
-              <Button
-                  type="button"
-                  :label="t('demands.addObservation')"
-                  icon="pi pi-plus"
-                  text
-                  class="add-observation-button"
-                  @click="addFormObservation"
-              />
-            </fieldset>
 
             <label>
               <span>{{ t('demands.deadline') }}</span>
@@ -325,14 +304,13 @@
 
             <Button
                 type="submit"
-                :label="editingDemandId ? t('demands.save') : t('demands.register')"
-                :icon="editingDemandId ? 'pi pi-check' : 'pi pi-plus'"
+                :label="t('demands.save')"
+                icon="pi pi-check"
                 :loading="isSubmitting"
                 :disabled="isSubmitting"
                 class="submit-button"
             />
             <Button
-                v-if="editingDemandId"
                 type="button"
                 :label="t('demands.cancelEdit')"
                 text
@@ -564,11 +542,16 @@ import {
   hasStoredPlanResource,
   type PlanResource
 } from '@/composables/use-plan-resources.ts';
-import type {Demand, DemandPriority, DemandStatus, EditDemand, RegisterDemand} from '@/types/demands/Demand.ts';
+import type {Demand, DemandPriority, DemandStatus, EditDemand} from '@/types/demands/Demand.ts';
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 
-type DemandForm = Omit<RegisterDemand, 'observations'> & {
-  observations: Array<{textObservation: string}>;
+type DemandForm = {
+  title: string;
+  description: string;
+  deadline: string | null;
+  status: DemandStatus;
+  priority: DemandPriority;
+  observationToReview: string | null;
   finalizedAt: string | null;
 };
 
@@ -592,7 +575,12 @@ const formCard = ref<HTMLElement | null>(null);
 const editingDemandId = ref<string | null>(null);
 const searchTerm = ref('');
 const isSearching = ref(false);
+const movingDemandId = ref<string | null>(null);
+const draggedDemand = ref<Demand | null>(null);
+const dropTargetStatus = ref<DemandStatus | null>(null);
 const {language, t} = useLanguage();
+
+const boardStatusOrder: DemandStatus[] = ['PENDING', 'ONGOING', 'BLOCKED', 'DONE'];
 
 const statusLabels = computed<Record<DemandStatus, string>>(() => ({
   PENDING: t('status.PENDING'),
@@ -609,17 +597,17 @@ const priorityLabels = computed<Record<DemandPriority, string>>(() => ({
 }));
 
 const statusOptions = computed(() => Object.entries(statusLabels.value).map(([value, label]) => ({value, label})));
-const statusFilterOptions = computed(() => [
-  {value: 'ALL', label: t('demands.allStatus')},
-  ...statusOptions.value,
-]);
 const priorityOptions = computed(() => Object.entries(priorityLabels.value).map(([value, label]) => ({value, label})));
 const priorityFilterOptions = computed(() => [
   {value: 'ALL', label: t('demands.allPriorities')},
   ...priorityOptions.value,
 ]);
-const selectedStatusFilter = ref<DemandStatus | 'ALL'>('ALL');
 const selectedPriorityFilter = ref<DemandPriority | 'ALL'>('ALL');
+const boardColumns = computed(() => boardStatusOrder.map((status) => ({
+  status,
+  label: statusLabels.value[status],
+  demands: demandStore.demands.filter((demand) => demand.status === status),
+})));
 
 const emptyForm = (): DemandForm => ({
   title: '',
@@ -628,7 +616,6 @@ const emptyForm = (): DemandForm => ({
   status: 'PENDING',
   priority: 'MEDIUM',
   observationToReview: null,
-  observations: [],
   finalizedAt: null
 });
 
@@ -668,11 +655,71 @@ const loadDemands = async (page = 0) => {
 };
 
 const applyFilters = () => {
-  demandStore.statusFilter = selectedStatusFilter.value === 'ALL' ? null : selectedStatusFilter.value;
+  demandStore.statusFilter = null;
   demandStore.priorityFilter = selectedPriorityFilter.value === 'ALL' ? null : selectedPriorityFilter.value;
   searchTerm.value = '';
   return loadDemands(0);
 };
+
+const prepareDemandForStatus = (status: DemandStatus) => {
+  void router.push({name: 'Demand Create', query: {status}});
+};
+
+const openDemandCreation = () => router.push({name: 'Demand Create'});
+
+const startDragging = (demand: Demand, event: DragEvent) => {
+  draggedDemand.value = demand;
+  movingDemandId.value = demand.id;
+  event.dataTransfer?.setData('text/plain', demand.id);
+  if (event.dataTransfer)
+    event.dataTransfer.effectAllowed = 'move';
+};
+
+const finishDragging = () => {
+  draggedDemand.value = null;
+  movingDemandId.value = null;
+  dropTargetStatus.value = null;
+};
+
+const setDropTarget = (status: DemandStatus) => {
+  if (draggedDemand.value && draggedDemand.value.status !== status)
+    dropTargetStatus.value = status;
+};
+
+const clearDropTarget = (status: DemandStatus) => {
+  if (dropTargetStatus.value === status)
+    dropTargetStatus.value = null;
+};
+
+const dropDemand = async (status: DemandStatus) => {
+  const demand = draggedDemand.value;
+  finishDragging();
+
+  if (!demand || demand.status === status)
+    return;
+
+  movingDemandId.value = demand.id;
+  const result = await demandStore.editDemand(demand.id, demandToEditPayload(demand, status));
+  movingDemandId.value = null;
+
+  if (result.isError) {
+    showErrorToast(toast, t('demands.moveError'));
+    return;
+  }
+
+  demand.status = status;
+  showSuccessToast(toast, t('demands.moveSuccess'));
+};
+
+const demandToEditPayload = (demand: Demand, status: DemandStatus): EditDemand => ({
+  title: demand.title,
+  description: demand.description,
+  deadline: demand.deadline,
+  status,
+  priority: demand.priority,
+  observationsToReview: demand.observationsToReview ?? null,
+  finalizedAt: demand.finalizedAt,
+});
 
 const searchDemands = async () => {
   const title = searchTerm.value.trim();
@@ -704,13 +751,12 @@ const clearSearch = async () => {
 };
 
 const saveDemand = async () => {
-  if (isSubmitting.value)
+  const demandId = editingDemandId.value;
+  if (isSubmitting.value || !demandId)
     return;
 
   isSubmitting.value = true;
-  const result = editingDemandId.value
-      ? await demandStore.editDemand(editingDemandId.value, toEditDemand())
-      : await demandStore.registerDemand(toRegisterDemand());
+  const result = await demandStore.editDemand(demandId, toEditDemand());
 
   if (result.isError) {
     showErrorToast(toast, result.response);
@@ -723,20 +769,6 @@ const saveDemand = async () => {
   await loadDemands(demandStore.currentPage);
   isSubmitting.value = false;
 };
-
-const toRegisterDemand = (): RegisterDemand => ({
-  title: form.title.trim(),
-  description: form.description.trim(),
-  deadline: form.deadline,
-  status: form.status,
-  priority: form.priority,
-  observationToReview: form.observationToReview?.trim() || null,
-  observations: {
-    textObservations: form.observations
-        .map(({textObservation}) => textObservation.trim())
-        .filter(Boolean),
-  },
-});
 
 const toEditDemand = (): EditDemand => ({
   title: form.title.trim(),
@@ -757,7 +789,6 @@ const startEditing = (demand: Demand) => {
     status: demand.status,
     priority: demand.priority,
     observationToReview: demand.observationsToReview ?? null,
-    observations: [],
     finalizedAt: toInputDate(demand.finalizedAt)
   });
   focusForm();
@@ -785,14 +816,6 @@ const openDemandDetails = async (demand: Demand) => {
 const closeDemandDetails = () => {
   selectedDemand.value = null;
   newObservationTexts.value = [''];
-};
-
-const addFormObservation = () => {
-  form.observations.push({textObservation: ''});
-};
-
-const removeFormObservation = (index: number) => {
-  form.observations.splice(index, 1);
 };
 
 const hasNewObservations = computed(() => newObservationTexts.value.some((text) => text.trim()));
@@ -894,6 +917,11 @@ const formatDeadline = (deadline: string | null) => {
   return new Intl.DateTimeFormat(language.value, {timeZone: 'UTC'}).format(new Date(`${deadline}T00:00:00Z`));
 };
 
+const isDemandOverdue = (demand: Demand) => {
+  const today = new Date().toISOString().slice(0, 10);
+  return Boolean(demand.deadline && demand.deadline < today && demand.status !== 'DONE');
+};
+
 const formatDate = (date: string) => new Intl.DateTimeFormat(language.value).format(new Date(date));
 
 const formatOptionalDate = (date: Date | string | null) => {
@@ -946,6 +974,8 @@ watch(
 );
 
 onMounted(async () => {
+  demandStore.statusFilter = null;
+
   if (canAccess('SUBDOMAINS')) {
     isInitializingSubdomains.value = true;
     await subdomainStore.fetchSubdomains();
@@ -1257,9 +1287,13 @@ h1 em {
 
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 355px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+}
+
+.content-grid.editing-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 355px);
 }
 
 .list-board, .intake {
@@ -1268,6 +1302,10 @@ h1 em {
   overflow: hidden;
   background: rgba(255, 255, 252, 0.78);
   box-shadow: 0 15px 32px rgba(48, 66, 58, 0.05);
+}
+
+.list-board {
+  min-width: 0;
 }
 
 h2 {
@@ -1343,6 +1381,219 @@ h2 {
 .empty-state i {
   color: #719348;
   font-size: 1.7rem;
+}
+
+.kanban-board {
+  display: grid;
+  grid-auto-columns: minmax(260px, 1fr);
+  grid-auto-flow: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  background: var(--wh-bg-subtle);
+  scrollbar-color: var(--wh-border-strong) transparent;
+}
+
+.kanban-column {
+  display: flex;
+  min-width: 0;
+  min-height: 520px;
+  flex-direction: column;
+  border: 1px solid var(--wh-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--wh-bg-subtle) 70%, var(--wh-surface));
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.kanban-column.is-drop-target {
+  border-color: var(--wh-primary);
+  background: color-mix(in srgb, var(--wh-primary-soft) 70%, var(--wh-surface));
+  box-shadow: inset 0 0 0 1px var(--wh-primary);
+}
+
+.kanban-column-header,
+.kanban-column-header > div,
+.card-topline,
+.card-actions,
+.kanban-card-footer {
+  display: flex;
+  align-items: center;
+}
+
+.kanban-column-header {
+  justify-content: space-between;
+  min-height: 54px;
+  padding: 9px 10px 9px 14px;
+  border-bottom: 1px solid var(--wh-border);
+}
+
+.kanban-column-header > div {
+  min-width: 0;
+  gap: 8px;
+}
+
+.kanban-column-header h3 {
+  overflow: hidden;
+  color: var(--wh-text);
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.column-indicator {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border: 2px solid #8c959f;
+  border-radius: 50%;
+}
+
+.column-ongoing .column-indicator {
+  border-color: #2f81f7;
+  background: #2f81f7;
+}
+
+.column-blocked .column-indicator {
+  border-color: #cf222e;
+  background: #cf222e;
+}
+
+.column-done .column-indicator {
+  border-color: #1a7f37;
+  background: #1a7f37;
+}
+
+.column-count {
+  display: grid;
+  min-width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0 6px;
+  border-radius: 12px;
+  color: var(--wh-text-soft);
+  background: var(--wh-border);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.kanban-column-header :deep(.p-button) {
+  width: 30px;
+  height: 30px;
+  color: var(--wh-text-soft);
+}
+
+.kanban-card-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 180px;
+  padding: 8px;
+}
+
+.column-empty {
+  padding: 28px 12px;
+  color: var(--wh-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.kanban-card {
+  padding: 12px;
+  border: 1px solid var(--wh-border-strong);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--wh-surface);
+  box-shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
+  cursor: grab;
+  transition: border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease, transform 140ms ease;
+}
+
+.kanban-card:hover,
+.kanban-card:focus-visible {
+  border-color: color-mix(in srgb, var(--wh-primary) 60%, var(--wh-border));
+  box-shadow: 0 4px 12px rgba(31, 35, 40, 0.08);
+  transform: translateY(-1px);
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+.kanban-card.is-moving {
+  opacity: 0.48;
+}
+
+.card-topline {
+  min-height: 24px;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-actions {
+  gap: 1px;
+  margin: -6px -6px -5px 0;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.kanban-card:hover .card-actions,
+.kanban-card:focus-within .card-actions {
+  opacity: 1;
+}
+
+.card-actions :deep(.p-button) {
+  width: 27px;
+  height: 27px;
+  color: var(--wh-text-muted);
+}
+
+.kanban-card h4 {
+  margin: 8px 0 0;
+  color: var(--wh-text);
+  font-size: 0.88rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.kanban-card .card-description,
+.kanban-card .review-note {
+  display: -webkit-box;
+  margin-top: 7px;
+  overflow: hidden;
+  color: var(--wh-text-soft);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.kanban-card .review-note {
+  color: #9a6700;
+  -webkit-line-clamp: 1;
+}
+
+.kanban-card-footer {
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--wh-border);
+  color: var(--wh-text-muted);
+  font-size: 0.65rem;
+}
+
+.kanban-card-footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kanban-card-footer .is-overdue {
+  color: #cf222e;
+  font-weight: 750;
 }
 
 .demand-list {
@@ -2024,6 +2275,14 @@ h2 {
   background: #111927;
 }
 
+:global(.app-dark .kanban-card .review-note) {
+  color: #d29922;
+}
+
+:global(.app-dark .kanban-card-footer .is-overdue) {
+  color: #ff7b72;
+}
+
 :global(.app-dark .delete-modal-backdrop) {
   background: rgba(4, 9, 17, 0.7);
 }
@@ -2172,6 +2431,21 @@ h2 {
   .demand-item {
     grid-template-columns: 24px minmax(0, 1fr);
     padding: 17px 15px;
+  }
+
+  .kanban-board {
+    grid-auto-columns: minmax(255px, 82vw);
+    padding: 12px;
+    scroll-snap-type: inline proximity;
+  }
+
+  .kanban-column {
+    min-height: 430px;
+    scroll-snap-align: start;
+  }
+
+  .card-actions {
+    opacity: 1;
   }
 
   .status-stamp {

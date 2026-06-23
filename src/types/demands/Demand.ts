@@ -41,6 +41,7 @@ export interface EditDemand {
     observationsToReview: string | null;
     finalizedAt: Date | null;
     subdomainId?: string | null;
+    observations: RegisterObservations;
 }
 
 export interface RegisterDemand {

@@ -275,6 +275,34 @@
               />
             </label>
 
+            <fieldset class="observations-fieldset">
+              <legend>{{ t('demands.observations') }} <small>{{ t('demands.optional') }}</small></legend>
+              <div v-for="(_, index) in form.observations" :key="index" class="observation-input-row">
+                <Textarea
+                    v-model="form.observations[index]"
+                    :placeholder="t('demands.observationPlaceholder')"
+                    rows="3"
+                    fluid
+                />
+                <Button
+                    type="button"
+                    icon="pi pi-trash"
+                    text
+                    severity="danger"
+                    :aria-label="t('demands.removeObservation')"
+                    @click="removeEditObservation(index)"
+                />
+              </div>
+              <Button
+                  type="button"
+                  :label="t('demands.addObservation')"
+                  icon="pi pi-plus"
+                  text
+                  class="add-observation-button"
+                  @click="addEditObservation"
+              />
+            </fieldset>
+
             <label>
               <span>{{ t('demands.deadline') }}</span>
               <InputText v-model="form.deadline" type="date" fluid/>
@@ -445,6 +473,10 @@
                   <dd><i class="pi pi-clock"/>{{ formatDate(selectedDemand.createdAt) }}</dd>
                 </div>
                 <div>
+                  <dt>{{ t('demands.updatedAt') }}</dt>
+                  <dd><i class="pi pi-history"/>{{ formatUpdatedAt(selectedDemand.updatedAt) }}</dd>
+                </div>
+                <div>
                   <dt>{{ t('demands.finalizedAt') }}</dt>
                   <dd><i class="pi pi-check-circle"/>{{ formatOptionalDate(selectedDemand.finalizedAt) }}</dd>
                 </div>
@@ -552,6 +584,7 @@ type DemandForm = {
   status: DemandStatus;
   priority: DemandPriority;
   observationToReview: string | null;
+  observations: string[];
   finalizedAt: string | null;
 };
 
@@ -616,6 +649,7 @@ const emptyForm = (): DemandForm => ({
   status: 'PENDING',
   priority: 'MEDIUM',
   observationToReview: null,
+  observations: [],
   finalizedAt: null
 });
 
@@ -719,6 +753,9 @@ const demandToEditPayload = (demand: Demand, status: DemandStatus): EditDemand =
   priority: demand.priority,
   observationsToReview: demand.observationsToReview ?? null,
   finalizedAt: demand.finalizedAt,
+  observations: {
+    textObservations: demand.observations.map((observation) => observation.textObservation),
+  },
 });
 
 const searchDemands = async () => {
@@ -777,8 +814,15 @@ const toEditDemand = (): EditDemand => ({
   status: form.status,
   priority: form.priority,
   observationsToReview: form.observationToReview?.trim() || null,
-  finalizedAt: parseInputDate(form.finalizedAt)
+  finalizedAt: parseInputDate(form.finalizedAt),
+  observations: {
+    textObservations: form.observations.map((observation) => observation.trim()).filter(Boolean),
+  },
 });
+
+const addEditObservation = () => form.observations.push('');
+
+const removeEditObservation = (index: number) => form.observations.splice(index, 1);
 
 const startEditing = (demand: Demand) => {
   editingDemandId.value = demand.id;
@@ -789,6 +833,7 @@ const startEditing = (demand: Demand) => {
     status: demand.status,
     priority: demand.priority,
     observationToReview: demand.observationsToReview ?? null,
+    observations: demand.observations.map((observation) => observation.textObservation),
     finalizedAt: toInputDate(demand.finalizedAt)
   });
   focusForm();
@@ -923,6 +968,15 @@ const isDemandOverdue = (demand: Demand) => {
 };
 
 const formatDate = (date: string) => new Intl.DateTimeFormat(language.value).format(new Date(date));
+
+const formatUpdatedAt = (date: string | null) => date
+    ? new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+      hour12: false,
+      timeZone: 'America/Sao_Paulo',
+    }).format(new Date(date))
+    : t('demands.neverUpdated');
 
 const formatOptionalDate = (date: Date | string | null) => {
   if (!date)

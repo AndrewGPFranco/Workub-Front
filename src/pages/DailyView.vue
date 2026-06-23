@@ -160,7 +160,7 @@
             <label>
               <span>{{ t('daily.summary') }}</span>
               <Textarea
-                  v-model.trim="form.summary"
+                  v-model="form.summary"
                   :placeholder="t('daily.summaryPlaceholder')"
                   rows="9"
                   required
@@ -303,7 +303,7 @@ const saveDaily = async () => {
   const savedDate = form.date;
   const result = await dailyStore.registerDaily({
     date: savedDate,
-    summary: form.summary,
+    summary: form.summary.trim(),
   });
 
   if (result.isError) {

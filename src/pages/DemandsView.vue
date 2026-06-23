@@ -49,7 +49,7 @@
           <p>{{ t('demands.intro') }}</p>
           <form class="search-form demand-search" role="search" @submit.prevent="searchDemands">
             <InputText
-                v-model.trim="searchTerm"
+                v-model="searchTerm"
                 type="search"
                 :placeholder="t('demands.searchPlaceholder')"
                 :aria-label="t('demands.search')"
@@ -240,13 +240,13 @@
           <form class="demand-form" @submit.prevent="saveDemand">
             <label>
               <span>{{ t('demands.title') }}</span>
-              <InputText v-model.trim="form.title" :placeholder="t('demands.titlePlaceholder')" required fluid/>
+              <InputText v-model="form.title" :placeholder="t('demands.titlePlaceholder')" required fluid/>
             </label>
 
             <label>
               <span>{{ t('demands.description') }}</span>
               <Textarea
-                  v-model.trim="form.description"
+                  v-model="form.description"
                   :placeholder="t('demands.descriptionPlaceholder')"
                   rows="5"
                   required
@@ -257,7 +257,7 @@
             <label>
               <span>{{ t('demands.reviewNote') }} <small>{{ t('demands.optional') }}</small></span>
               <Textarea
-                  v-model.trim="form.observationToReview"
+                  v-model="form.observationToReview"
                   :placeholder="t('demands.reviewNotePlaceholder')"
                   rows="4"
                   fluid
@@ -272,7 +272,7 @@
                   class="observation-input-row"
               >
                 <Textarea
-                    v-model.trim="observation.textObservation"
+                    v-model="observation.textObservation"
                     :placeholder="t('demands.observationPlaceholder')"
                     rows="3"
                     fluid
@@ -423,7 +423,7 @@
                       class="observation-input-row"
                   >
                     <Textarea
-                        v-model.trim="newObservationTexts[index]"
+                        v-model="newObservationTexts[index]"
                         :placeholder="t('demands.observationPlaceholder')"
                         rows="3"
                         required
@@ -725,12 +725,12 @@ const saveDemand = async () => {
 };
 
 const toRegisterDemand = (): RegisterDemand => ({
-  title: form.title,
-  description: form.description,
+  title: form.title.trim(),
+  description: form.description.trim(),
   deadline: form.deadline,
   status: form.status,
   priority: form.priority,
-  observationToReview: form.observationToReview,
+  observationToReview: form.observationToReview?.trim() || null,
   observations: {
     textObservations: form.observations
         .map(({textObservation}) => textObservation.trim())
@@ -739,12 +739,12 @@ const toRegisterDemand = (): RegisterDemand => ({
 });
 
 const toEditDemand = (): EditDemand => ({
-  title: form.title,
-  description: form.description,
+  title: form.title.trim(),
+  description: form.description.trim(),
   deadline: form.deadline,
   status: form.status,
   priority: form.priority,
-  observationsToReview: form.observationToReview,
+  observationsToReview: form.observationToReview?.trim() || null,
   finalizedAt: parseInputDate(form.finalizedAt)
 });
 

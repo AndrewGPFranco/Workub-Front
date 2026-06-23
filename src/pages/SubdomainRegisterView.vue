@@ -79,7 +79,7 @@
             <label>
               <span>{{ t('subdomain.name') }}</span>
               <InputText
-                  v-model.trim="form.name"
+                  v-model="form.name"
                   :placeholder="t('subdomain.namePlaceholder')"
                   required
                   fluid
@@ -89,7 +89,7 @@
             <label>
               <span>{{ t('subdomain.urlPhoto') }} <small>{{ t('demands.optional') }}</small></span>
               <InputText
-                  v-model.trim="form.urlPhoto"
+                  v-model="form.urlPhoto"
                   type="url"
                   :placeholder="t('subdomain.urlPhotoPlaceholder')"
                   fluid

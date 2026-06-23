@@ -143,7 +143,7 @@
             <label>
               <span>{{ t('feedback.summary') }}</span>
               <Textarea
-                  v-model.trim="form.feedback"
+                  v-model="form.feedback"
                   :placeholder="t('feedback.summaryPlaceholder')"
                   rows="8"
                   required
@@ -154,7 +154,7 @@
             <label>
               <span>{{ t('feedback.peopleFeedback') }}</span>
               <InputText
-                  v-model.trim="form.peopleFeedback"
+                  v-model="form.peopleFeedback"
                   :placeholder="t('feedback.peopleFeedbackPlaceholder')"
                   required
                   fluid
@@ -273,8 +273,8 @@ const saveFeedback = async () => {
   isSubmitting.value = true;
   const result = await feedbackStore.registerFeedback({
     date: form.date,
-    feedback: form.feedback,
-    peopleFeedback: form.peopleFeedback,
+    feedback: form.feedback.trim(),
+    peopleFeedback: form.peopleFeedback.trim(),
   });
 
   if (result.isError) {

@@ -37,6 +37,13 @@ export const useDemandStore = defineStore('demand-store', {
         selectedSubdomainId() {
             return useSubdomainStore().selectedSubdomainId;
         },
+        applyDemandPage(page: PageResponse<Demand>) {
+            this.demands = page.content;
+            this.currentPage = page.page;
+            this.totalPages = page.totalPages;
+            this.totalElements = page.totalElements;
+            this.canGoForward = page.hasNext;
+        },
         async fetchDemands(page = 0): Promise<ResponseAPI<Demand[]>> {
             this.isLoading = true;
             const subdomainId = this.selectedSubdomainId();
@@ -55,11 +62,7 @@ export const useDemandStore = defineStore('demand-store', {
                     },
                 );
 
-                this.demands = data.data.content;
-                this.currentPage = data.data.page;
-                this.totalPages = data.data.totalPages;
-                this.totalElements = data.data.totalElements;
-                this.canGoForward = data.data.hasNext;
+                this.applyDemandPage(data.data);
 
                 return new ResponseAPI(data.httpStatusCode, data.data.content);
             } catch (error) {
@@ -92,11 +95,7 @@ export const useDemandStore = defineStore('demand-store', {
                 }
 
                 if (typeof data.data === 'object') {
-                    this.demands = data.data.content;
-                    this.currentPage = data.data.page;
-                    this.totalPages = data.data.totalPages;
-                    this.totalElements = data.data.totalElements;
-                    this.canGoForward = data.data.hasNext;
+                    this.applyDemandPage(data.data);
 
                     return new ResponseAPI(data.httpStatusCode, data.data.content);
                 }

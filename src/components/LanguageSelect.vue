@@ -18,7 +18,6 @@ const {language, setLanguage, t} = useLanguage();
 const options = computed<{ value: Language; label: string }[]>(() => [
   {value: 'pt-BR', label: t('language.pt-BR')},
   {value: 'en', label: t('language.en')},
-  {value: 'es', label: t('language.es')},
 ]);
 </script>
 

@@ -19,11 +19,5 @@ describe('LanguageSelect', () => {
         expect(localStorage.getItem('workhub-language')).toBe('en');
         expect(document.documentElement.lang).toBe('en');
         expect(translate('auth.login.title')).toBe('Access your account');
-
-        await select.setValue('es');
-
-        expect(localStorage.getItem('workhub-language')).toBe('es');
-        expect(document.documentElement.lang).toBe('es');
-        expect(translate('auth.login.title')).toBe('Accede a tu cuenta');
     });
 });

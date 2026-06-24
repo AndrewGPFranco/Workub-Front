@@ -71,7 +71,8 @@
                 @click="clearSearch"
             />
           </form>
-          <Button :label="t('demands.register')" icon="pi pi-plus" class="new-demand-button" @click="openDemandCreation"/>
+          <Button :label="t('demands.register')" icon="pi pi-plus" class="new-demand-button"
+                  @click="openDemandCreation"/>
         </div>
       </header>
 
@@ -192,6 +193,14 @@
                       {{ priorityLabels[demand.priority] }}
                     </span>
                     <div class="card-actions">
+                      <Button
+                          v-if="canAccess('SUBDOMAINS')"
+                          icon="pi pi-sitemap"
+                          text
+                          rounded
+                          :aria-label="t('demands.changeSubdomain')"
+                          @click.stop="openChangeSubdomainDialog(demand)"
+                      />
                       <Button icon="pi pi-pencil" text rounded :aria-label="t('demands.edit')"
                               @click.stop="startEditing(demand)"/>
                       <Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('demands.delete')"
@@ -502,6 +511,75 @@
 
       <Transition name="delete-modal">
         <div
+            v-if="demandToChangeSubdomain"
+            class="delete-modal-backdrop"
+            role="presentation"
+            @click.self="closeChangeSubdomainDialog"
+        >
+          <section
+              ref="changeSubdomainModal"
+              class="delete-modal change-subdomain-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="change-subdomain-modal-title"
+              aria-describedby="change-subdomain-modal-description"
+              tabindex="-1"
+          >
+            <header class="delete-modal-header">
+              <div>
+                <p class="kicker">{{ t('demands.changeSubdomainKicker') }}</p>
+                <h2 id="change-subdomain-modal-title">{{ t('demands.changeSubdomainTitle') }}</h2>
+              </div>
+              <button
+                  class="delete-modal-close"
+                  type="button"
+                  :aria-label="t('demands.close')"
+                  :disabled="isChangingSubdomain"
+                  @click="closeChangeSubdomainDialog"
+              >
+                <i class="pi pi-times"/>
+              </button>
+            </header>
+
+            <div class="change-subdomain-content">
+              <p id="change-subdomain-modal-description">
+                {{ t('demands.changeSubdomainDescription') }} <strong>{{ demandToChangeSubdomain.title }}</strong>.
+              </p>
+              <label>
+                <span>{{ t('demands.destinationSubdomain') }}</span>
+                <Select
+                    v-model="destinationSubdomainId"
+                    :options="destinationSubdomainOptions"
+                    option-label="label"
+                    option-value="value"
+                    :placeholder="t('demands.selectDestinationSubdomain')"
+                    :disabled="isChangingSubdomain"
+                    fluid
+                />
+              </label>
+            </div>
+
+            <footer class="delete-modal-footer">
+              <button class="modal-button secondary" type="button" :disabled="isChangingSubdomain"
+                      @click="closeChangeSubdomainDialog">
+                {{ t('demands.cancel') }}
+              </button>
+              <button
+                  class="modal-button edit"
+                  type="button"
+                  :disabled="isChangingSubdomain || !destinationSubdomainId"
+                  @click="changeDemandSubdomain"
+              >
+                <i :class="isChangingSubdomain ? 'pi pi-spin pi-spinner' : 'pi pi-sitemap'"/>
+                {{ isChangingSubdomain ? t('demands.changingSubdomain') : t('demands.confirmSubdomainChange') }}
+              </button>
+            </footer>
+          </section>
+        </div>
+      </Transition>
+
+      <Transition name="delete-modal">
+        <div
             v-if="isDeleteDialogVisible"
             class="delete-modal-backdrop"
             role="presentation"
@@ -592,6 +670,7 @@ const toast = useToast();
 const isSubmitting = ref(false);
 const isDeleting = ref(false);
 const isAddingObservation = ref(false);
+const isChangingSubdomain = ref(false);
 const newObservationTexts = ref<string[]>(['']);
 const isInitializingSubdomains = ref(false);
 const isDeleteDialogVisible = ref(false);
@@ -599,6 +678,9 @@ const demandToDelete = ref<Demand | null>(null);
 const deleteModal = ref<HTMLElement | null>(null);
 const selectedDemand = ref<Demand | null>(null);
 const detailsModal = ref<HTMLElement | null>(null);
+const demandToChangeSubdomain = ref<Demand | null>(null);
+const destinationSubdomainId = ref<string | null>(null);
+const changeSubdomainModal = ref<HTMLElement | null>(null);
 const authStore = useAuthStore();
 const demandStore = useDemandStore();
 const subdomainStore = useSubdomainStore();
@@ -641,6 +723,11 @@ const boardColumns = computed(() => boardStatusOrder.map((status) => ({
   label: statusLabels.value[status],
   demands: demandStore.demands.filter((demand) => demand.status === status),
 })));
+const destinationSubdomainOptions = computed(() => subdomainStore.subdomains
+    .filter((subdomain) => subdomain.id
+        && subdomain.id !== demandToChangeSubdomain.value?.subdomainId
+        && subdomain.id !== subdomainStore.selectedSubdomainId)
+    .map((subdomain) => ({value: subdomain.id as string, label: subdomain.name})));
 
 const emptyForm = (): DemandForm => ({
   title: '',
@@ -844,6 +931,42 @@ const cancelEditing = () => {
   Object.assign(form, emptyForm());
 };
 
+const openChangeSubdomainDialog = async (demand: Demand) => {
+  demandToChangeSubdomain.value = demand;
+  destinationSubdomainId.value = null;
+  await nextTick();
+  changeSubdomainModal.value?.focus();
+};
+
+const closeChangeSubdomainDialog = () => {
+  if (isChangingSubdomain.value)
+    return;
+
+  demandToChangeSubdomain.value = null;
+  destinationSubdomainId.value = null;
+};
+
+const changeDemandSubdomain = async () => {
+  const demand = demandToChangeSubdomain.value;
+  const subdomainId = destinationSubdomainId.value;
+  if (!demand || !subdomainId || isChangingSubdomain.value)
+    return;
+
+  isChangingSubdomain.value = true;
+  const result = await demandStore.changeDemandSubdomain(demand.id, subdomainId);
+
+  if (result.isError) {
+    showErrorToast(toast, result.response);
+    isChangingSubdomain.value = false;
+    return;
+  }
+
+  showSuccessToast(toast, result.response);
+  isChangingSubdomain.value = false;
+  closeChangeSubdomainDialog();
+  await loadDemands(demandStore.currentPage);
+};
+
 const confirmDeletion = async (demand: Demand) => {
   demandToDelete.value = demand;
   isDeleteDialogVisible.value = true;
@@ -952,6 +1075,7 @@ const closeDeleteDialogOnEscape = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     closeDemandDetails();
     closeDeleteDialog();
+    closeChangeSubdomainDialog();
   }
 };
 
@@ -2179,6 +2303,37 @@ h2 {
   line-height: 1.55;
 }
 
+.change-subdomain-content {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+}
+
+.change-subdomain-content p {
+  margin: 0;
+  color: #748078;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.change-subdomain-content p strong {
+  color: #213b33;
+}
+
+.change-subdomain-content label {
+  display: grid;
+  gap: 7px;
+  color: #52645d;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.change-subdomain-content :deep(.p-select) {
+  width: 100%;
+  border-color: #d9dcd6;
+  border-radius: 3px;
+}
+
 .delete-modal-footer {
   justify-content: flex-end;
   gap: 8px;
@@ -2362,6 +2517,20 @@ h2 {
 
 :global(.app-dark .delete-modal-content p) {
   color: #aab5c9;
+}
+
+:global(.app-dark .change-subdomain-content p),
+:global(.app-dark .change-subdomain-content label) {
+  color: #aab5c9;
+}
+
+:global(.app-dark .change-subdomain-content p strong) {
+  color: #f7f5ef;
+}
+
+:global(.app-dark .change-subdomain-content .p-select) {
+  border-color: rgba(214, 220, 244, 0.16);
+  background: #101522;
 }
 
 :global(.app-dark .details-modal-content h3) {

@@ -160,5 +160,21 @@ export const useDemandStore = defineStore('demand-store', {
                 return new ResponseAPI(500, getApiErrorMessage(error, translate('demands.deleteError')));
             }
         },
+        async changeDemandSubdomain(idDemand: string, idSubdomain: string): Promise<ResponseAPI<string>> {
+            try {
+                const {data} = await axios.put<ResponseAPI<string>>(
+                    `${this.url}/demands/alter-subdomain/${idDemand}`,
+                    null,
+                    {
+                        headers: this.authorizationHeader(),
+                        params: {idSubdomain}
+                    },
+                );
+
+                return new ResponseAPI(data.httpStatusCode, data.data);
+            } catch (error) {
+                return new ResponseAPI(500, getApiErrorMessage(error, translate('demands.changeSubdomainError')));
+            }
+        }
     },
 });

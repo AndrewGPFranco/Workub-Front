@@ -15,6 +15,49 @@ import type {
 } from '@/types/demands/Demand.ts';
 
 const TOKEN_STORAGE_KEY = 'token';
+type DemandPagePayload = PageResponse<Demand> | PageResponse<Demand>[];
+type DemandStatusPageState = {
+    currentPage: number;
+    totalPages: number;
+    totalElements: number;
+    canGoForward: boolean;
+    isLoading: boolean;
+};
+
+const DEMAND_STATUS_ORDER: DemandStatus[] = ['PENDING', 'ONGOING', 'BLOCKED', 'DONE'];
+const emptyStatusPage = (): DemandStatusPageState => ({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    canGoForward: false,
+    isLoading: false,
+});
+
+const emptyStatusPages = (): Record<DemandStatus, DemandStatusPageState> => ({
+    PENDING: emptyStatusPage(),
+    ONGOING: emptyStatusPage(),
+    BLOCKED: emptyStatusPage(),
+    DONE: emptyStatusPage(),
+});
+
+const emptyDemandPage = (page: number): PageResponse<Demand> => ({
+    content: [],
+    page,
+    pageSize: 0,
+    totalPages: 0,
+    totalElements: 0,
+    hasNext: false,
+});
+
+const isPageResponse = (payload: unknown): payload is PageResponse<Demand> =>
+    payload !== null
+    && typeof payload === 'object'
+    && !Array.isArray(payload)
+    && 'content' in payload
+    && Array.isArray(payload.content);
+
+const isPageResponseList = (payload: unknown): payload is PageResponse<Demand>[] =>
+    Array.isArray(payload) && payload.length > 0 && payload.every(isPageResponse);
 
 export const useDemandStore = defineStore('demand-store', {
     state: () => ({
@@ -27,6 +70,7 @@ export const useDemandStore = defineStore('demand-store', {
         canGoForward: false,
         statusFilter: null as DemandStatus | null,
         priorityFilter: null as DemandPriority | null,
+        statusPages: emptyStatusPages(),
     }),
     actions: {
         authorizationHeader() {
@@ -44,12 +88,51 @@ export const useDemandStore = defineStore('demand-store', {
             this.totalElements = page.totalElements;
             this.canGoForward = page.hasNext;
         },
+        applyStatusPageState(status: DemandStatus, page: PageResponse<Demand>) {
+            this.statusPages[status] = {
+                currentPage: page.page,
+                totalPages: page.totalPages,
+                totalElements: page.totalElements,
+                canGoForward: page.hasNext,
+                isLoading: false,
+            };
+        },
+        applyDemandPages(pages: PageResponse<Demand>[]) {
+            this.statusPages = emptyStatusPages();
+            this.demands = pages.flatMap((page) => page.content);
+            this.currentPage = pages[0]?.page ?? 0;
+            this.totalPages = pages.reduce((totalPages, page) => Math.max(totalPages, page.totalPages), 0);
+            this.totalElements = pages.reduce((totalElements, page) => totalElements + page.totalElements, 0);
+            this.canGoForward = pages.some((page) => page.hasNext);
+            pages.forEach((page, index) => {
+                const status = page.content[0]?.status ?? DEMAND_STATUS_ORDER[index];
+
+                if (status)
+                    this.applyStatusPageState(status, page);
+            });
+        },
+        applyDemandStatusPage(status: DemandStatus, page: PageResponse<Demand>, append = false) {
+            const otherStatusDemands = this.demands.filter((demand) => demand.status !== status);
+            const currentStatusDemands = append
+                ? this.demands.filter((demand) => demand.status === status)
+                : [];
+            const mergedStatusDemands = [...currentStatusDemands, ...page.content]
+                .filter((demand, index, demands) => demands.findIndex(({id}) => id === demand.id) === index);
+
+            this.demands = [...otherStatusDemands, ...mergedStatusDemands];
+            this.applyStatusPageState(status, page);
+            this.currentPage = Math.min(...Object.values(this.statusPages).map(({currentPage}) => currentPage));
+            this.totalPages = Math.max(...Object.values(this.statusPages).map(({totalPages}) => totalPages));
+            this.totalElements = Object.values(this.statusPages)
+                .reduce((totalElements, statusPage) => totalElements + statusPage.totalElements, 0);
+            this.canGoForward = Object.values(this.statusPages).some(({canGoForward}) => canGoForward);
+        },
         async fetchDemands(page = 0): Promise<ResponseAPI<Demand[]>> {
             this.isLoading = true;
             const subdomainId = this.selectedSubdomainId();
 
             try {
-                const {data} = await axios.get<ResponseAPI<PageResponse<Demand>>>(
+                const {data} = await axios.get<ResponseAPI<DemandPagePayload>>(
                     `${this.url}/demands/by-user`,
                     {
                         params: {
@@ -62,6 +145,12 @@ export const useDemandStore = defineStore('demand-store', {
                     },
                 );
 
+                if (Array.isArray(data.data)) {
+                    this.applyDemandPages(data.data);
+
+                    return new ResponseAPI(data.httpStatusCode, this.demands);
+                }
+
                 this.applyDemandPage(data.data);
 
                 return new ResponseAPI(data.httpStatusCode, data.data.content);
@@ -71,18 +160,61 @@ export const useDemandStore = defineStore('demand-store', {
                 this.isLoading = false;
             }
         },
+        async fetchDemandsByStatus(status: DemandStatus, page = 0, append = false): Promise<ResponseAPI<Demand[]>> {
+            const statusPage = this.statusPages[status];
+
+            if (statusPage.isLoading)
+                return new ResponseAPI(200, []);
+
+            statusPage.isLoading = true;
+            const subdomainId = this.selectedSubdomainId();
+
+            try {
+                const {data} = await axios.get<ResponseAPI<DemandPagePayload>>(
+                    `${this.url}/demands/by-user`,
+                    {
+                        params: {
+                            page,
+                            status,
+                            ...(this.priorityFilter ? {priority: this.priorityFilter} : {}),
+                            ...(subdomainId ? {subdomainId} : {}),
+                        },
+                        headers: this.authorizationHeader(),
+                    },
+                );
+                const pageResponse = Array.isArray(data.data)
+                    ? data.data.find((statusPage) => statusPage.content[0]?.status === status) ?? data.data[0]
+                    : data.data;
+
+                const statusPageResponse = pageResponse ?? emptyDemandPage(page);
+
+                this.applyDemandStatusPage(status, statusPageResponse, append);
+
+                return new ResponseAPI(data.httpStatusCode, statusPageResponse.content);
+            } catch (error) {
+                return new ResponseAPI(getApiErrorStatus(error), []);
+            } finally {
+                this.statusPages[status].isLoading = false;
+            }
+        },
         async searchDemand(title: string): Promise<ResponseAPI<Demand[] | string>> {
             this.isLoading = true;
             const subdomainId = this.selectedSubdomainId();
 
             try {
-                const {data} = await axios.get<ResponseAPI<PageResponse<Demand> | Demand[] | string>>(
+                const {data} = await axios.get<ResponseAPI<DemandPagePayload | Demand[] | string>>(
                     `${this.url}/demands/search`,
                     {
                         params: {title, ...(subdomainId ? {subdomainId} : {})},
                         headers: this.authorizationHeader(),
                     },
                 );
+
+                if (isPageResponseList(data.data)) {
+                    this.applyDemandPages(data.data);
+
+                    return new ResponseAPI(data.httpStatusCode, this.demands);
+                }
 
                 if (Array.isArray(data.data)) {
                     this.demands = data.data;
@@ -94,7 +226,7 @@ export const useDemandStore = defineStore('demand-store', {
                     return new ResponseAPI(data.httpStatusCode, data.data);
                 }
 
-                if (typeof data.data === 'object') {
+                if (isPageResponse(data.data)) {
                     this.applyDemandPage(data.data);
 
                     return new ResponseAPI(data.httpStatusCode, data.data.content);

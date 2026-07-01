@@ -129,7 +129,7 @@
                   rounded
                   :aria-label="t('demands.refresh')"
                   :loading="demandStore.isLoading"
-                  @click="loadDemands(demandStore.currentPage)"
+                  @click="loadDemands(0)"
               />
             </div>
           </div>
@@ -170,7 +170,7 @@
                 />
               </header>
 
-              <div class="kanban-card-list">
+              <div class="kanban-card-list" @scroll.passive="handleColumnScroll(column.status, $event)">
                 <p v-if="column.demands.length === 0" class="column-empty">
                   {{ t('demands.emptyColumn') }}
                 </p>
@@ -221,33 +221,13 @@
                     </span>
                   </footer>
                 </article>
+                <p v-if="isStatusLoading(column.status)" class="column-loading">
+                  <i class="pi pi-spin pi-spinner"/>
+                  <span>{{ t('demands.loading') }}</span>
+                </p>
               </div>
             </section>
           </div>
-
-          <footer class="pagination">
-            <span>
-              {{ t('demands.page') }} {{ demandStore.currentPage + 1 }}
-              <template v-if="demandStore.totalPages"> {{ t('demands.of') }} {{ demandStore.totalPages }}</template>
-              · {{ demandStore.totalElements }} {{ t('demands.items') }}
-            </span>
-            <div>
-              <Button
-                  icon="pi pi-arrow-left"
-                  text
-                  :aria-label="t('demands.previousPage')"
-                  :disabled="demandStore.currentPage === 0 || demandStore.isLoading"
-                  @click="loadDemands(demandStore.currentPage - 1)"
-              />
-              <Button
-                  icon="pi pi-arrow-right"
-                  text
-                  :aria-label="t('demands.nextPage')"
-                  :disabled="!demandStore.canGoForward || demandStore.isLoading"
-                  @click="loadDemands(demandStore.currentPage + 1)"
-              />
-            </div>
-          </footer>
         </section>
 
         <aside v-if="editingDemandId" ref="formCard" class="intake">
@@ -775,6 +755,33 @@ const loadDemands = async (page = 0) => {
   }
 };
 
+const isStatusLoading = (status: DemandStatus) => demandStore.statusPages[status].isLoading;
+
+const loadNextStatusPage = async (status: DemandStatus) => {
+  const statusPage = demandStore.statusPages[status];
+
+  if (demandStore.isLoading || statusPage.isLoading || !statusPage.canGoForward)
+    return;
+
+  const result = await demandStore.fetchDemandsByStatus(status, statusPage.currentPage + 1, true);
+
+  if (result.httpStatusCode === 403) {
+    await router.replace({name: 'Access Denied'});
+    return;
+  }
+
+  if (result.isError)
+    showErrorToast(toast, t('demands.loadError'));
+};
+
+const handleColumnScroll = (status: DemandStatus, event: Event) => {
+  const target = event.currentTarget as HTMLElement;
+  const distanceToBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+
+  if (distanceToBottom <= 80)
+    void loadNextStatusPage(status);
+};
+
 const applyFilters = () => {
   demandStore.statusFilter = null;
   demandStore.priorityFilter = selectedPriorityFilter.value === 'ALL' ? null : selectedPriorityFilter.value;
@@ -890,7 +897,7 @@ const saveDemand = async () => {
 
   cancelEditing();
   showSuccessToast(toast, result.response);
-  await loadDemands(demandStore.currentPage);
+  await loadDemands(0);
   isSubmitting.value = false;
 };
 
@@ -964,7 +971,7 @@ const changeDemandSubdomain = async () => {
   showSuccessToast(toast, result.response);
   isChangingSubdomain.value = false;
   closeChangeSubdomainDialog();
-  await loadDemands(demandStore.currentPage);
+  await loadDemands(0);
 };
 
 const confirmDeletion = async (demand: Demand) => {
@@ -1013,7 +1020,7 @@ const addObservationToSelectedDemand = async () => {
 
   newObservationTexts.value = [''];
   showSuccessToast(toast, result.response);
-  await loadDemands(demandStore.currentPage);
+  await loadDemands(0);
   selectedDemand.value = demandStore.demands.find(({id}) => id === demand.id) ?? demand;
   isAddingObservation.value = false;
 };
@@ -1061,12 +1068,8 @@ const deleteDemand = async () => {
   if (editingDemandId.value === demand.id)
     cancelEditing();
 
-  const page = demandStore.demands.length === 1 && demandStore.currentPage > 0
-      ? demandStore.currentPage - 1
-      : demandStore.currentPage;
-
   showSuccessToast(toast, result.response);
-  await loadDemands(page);
+  await loadDemands(0);
   isDeleting.value = false;
   closeDeleteDialog();
 };
@@ -1515,11 +1518,6 @@ h2 {
 
 .demand-search {
   width: min(360px, 100%);
-  padding: 5px;
-  border: 1px solid var(--wh-border);
-  border-radius: var(--wh-radius-md);
-  background: var(--wh-surface);
-  box-shadow: var(--wh-shadow-sm);
 }
 
 .search-input {
@@ -1666,16 +1664,29 @@ h2 {
   display: grid;
   align-content: start;
   gap: 8px;
+  flex: 1 1 auto;
+  max-height: min(68vh, 720px);
   min-height: 180px;
+  overflow-y: auto;
   padding: 8px;
+  scrollbar-color: var(--wh-border-strong) transparent;
 }
 
-.column-empty {
+.column-empty,
+.column-loading {
   padding: 28px 12px;
   color: var(--wh-text-muted);
   font-size: 0.75rem;
   line-height: 1.5;
   text-align: center;
+}
+
+.column-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-block: 14px;
 }
 
 .kanban-card {

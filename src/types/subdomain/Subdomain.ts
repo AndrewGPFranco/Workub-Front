@@ -3,6 +3,8 @@ export interface RegisterSubdomain {
     name: string;
 }
 
+export type EditSubdomain = RegisterSubdomain;
+
 export interface Subdomain {
     id?: string;
     urlPhoto?: string | null;

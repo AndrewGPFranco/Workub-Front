@@ -3,7 +3,7 @@ import {defineStore} from 'pinia';
 import ResponseAPI from '@/utils/ResponseAPI.ts';
 import {translate} from '@/composables/use-language.ts';
 import {getApiErrorMessage, getApiErrorStatus} from '@/utils/api-error.ts';
-import type {RegisterSubdomain, Subdomain} from '@/types/subdomain/Subdomain.ts';
+import type {EditSubdomain, RegisterSubdomain, Subdomain} from '@/types/subdomain/Subdomain.ts';
 
 const TOKEN_STORAGE_KEY = 'token';
 const SELECTED_SUBDOMAIN_STORAGE_KEY = 'selectedSubdomain';
@@ -96,6 +96,26 @@ export const useSubdomainStore = defineStore('subdomain-store', {
                 return new ResponseAPI(
                     getApiErrorStatus(error),
                     getApiErrorMessage(error, translate('subdomain.registerError')),
+                );
+            }
+        },
+        async editSubdomain(idSubdomain: string, subdomain: EditSubdomain): Promise<ResponseAPI<string>> {
+            try {
+                const {data} = await axios.put<ResponseAPI<string>>(
+                    `${this.url}/subdomains/edit/${idSubdomain}`,
+                    subdomain,
+                    {headers: this.authorizationHeader()},
+                );
+
+                const index = this.subdomains.findIndex((item) => item.id === idSubdomain);
+                if (index >= 0)
+                    this.subdomains[index] = {...this.subdomains[index], ...subdomain};
+
+                return new ResponseAPI(data.httpStatusCode, data.data);
+            } catch (error) {
+                return new ResponseAPI(
+                    getApiErrorStatus(error),
+                    getApiErrorMessage(error, translate('subdomain.editError')),
                 );
             }
         },

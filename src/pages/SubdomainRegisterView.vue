@@ -71,11 +71,45 @@
         <aside class="intake">
           <div class="intake-heading">
             <p class="kicker">{{ t('subdomain.formKicker') }}</p>
-            <h2>{{ t('subdomain.formTitle') }}</h2>
-            <p>{{ t('subdomain.formDescription') }}</p>
+            <h2>{{ isEditing ? t('subdomain.editTitle') : t('subdomain.formTitle') }}</h2>
+            <p>{{ isEditing ? t('subdomain.editDescription') : t('subdomain.formDescription') }}</p>
           </div>
 
           <form class="subdomain-form" @submit.prevent="saveSubdomain">
+            <div class="operation-switch" role="group" :aria-label="t('subdomain.operation')">
+              <button
+                  type="button"
+                  :class="{active: mode === 'register'}"
+                  @click="setMode('register')"
+              >
+                <i class="pi pi-plus"/>
+                {{ t('subdomain.createMode') }}
+              </button>
+              <button
+                  type="button"
+                  :class="{active: mode === 'edit'}"
+                  :disabled="subdomainOptions.length === 0"
+                  @click="setMode('edit')"
+              >
+                <i class="pi pi-pencil"/>
+                {{ t('subdomain.editMode') }}
+              </button>
+            </div>
+
+            <label v-if="isEditing">
+              <span>{{ t('subdomain.editTarget') }}</span>
+              <Select
+                  v-model="editingSubdomainId"
+                  :options="subdomainOptions"
+                  option-label="label"
+                  option-value="value"
+                  :placeholder="t('subdomain.selectPlaceholder')"
+                  :loading="subdomainStore.isLoading"
+                  :disabled="isSubmitting || subdomainStore.isLoading"
+                  fluid
+              />
+            </label>
+
             <label>
               <span>{{ t('subdomain.name') }}</span>
               <InputText
@@ -98,10 +132,10 @@
 
             <Button
                 type="submit"
-                :label="t('subdomain.save')"
-                icon="pi pi-check"
+                :label="isEditing ? t('subdomain.editSave') : t('subdomain.save')"
+                :icon="isEditing ? 'pi pi-pencil' : 'pi pi-check'"
                 :loading="isSubmitting"
-                :disabled="isSubmitting || !form.name.trim()"
+                :disabled="isSubmitDisabled"
                 class="submit-button"
             />
           </form>
@@ -124,9 +158,10 @@
 </template>
 
 <script setup lang="ts">
-import {computed, reactive, ref} from 'vue';
+import {computed, onMounted, reactive, ref, watch} from 'vue';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
+import Select from 'primevue/select';
 import {useToast} from 'primevue/usetoast';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 import LanguageSelect from '@/components/LanguageSelect.vue';
@@ -141,7 +176,7 @@ import {
   type PlanResource
 } from '@/composables/use-plan-resources.ts';
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
-import type {RegisterSubdomain} from '@/types/subdomain/Subdomain.ts';
+import type {RegisterSubdomain, Subdomain} from '@/types/subdomain/Subdomain.ts';
 
 const toast = useToast();
 const authStore = useAuthStore();
@@ -150,11 +185,25 @@ const defaultRouteName = getDefaultAuthorizedRouteName();
 const canAccess = (resource: PlanResource) => hasStoredPlanResource(resource);
 const {language, t} = useLanguage();
 const isSubmitting = ref(false);
+const mode = ref<'register' | 'edit'>('register');
+const editingSubdomainId = ref<string | null>(null);
 
 const form = reactive<RegisterSubdomain>({
   urlPhoto: null,
   name: '',
 });
+
+const getSubdomainKey = (subdomain: Subdomain) => subdomain.id ?? subdomain.name;
+const isEditing = computed(() => mode.value === 'edit');
+const subdomainOptions = computed(() => subdomainStore.subdomains
+    .filter((subdomain) => Boolean(subdomain.id))
+    .map((subdomain) => ({value: subdomain.id as string, label: subdomain.name})));
+const editingSubdomain = computed(() =>
+    subdomainStore.subdomains.find((subdomain) => subdomain.id === editingSubdomainId.value) ?? null,
+);
+const isSubmitDisabled = computed(() =>
+    isSubmitting.value || !form.name.trim() || (isEditing.value && !editingSubdomainId.value),
+);
 
 const userName = computed(() => {
   const user = authStore.userLogged;
@@ -173,15 +222,47 @@ const photoPreviewUrl = computed(() => {
   return urlPhoto || null;
 });
 
+const fillForm = (subdomain: Subdomain | null) => {
+  form.name = subdomain?.name ?? '';
+  form.urlPhoto = subdomain?.urlPhoto ?? null;
+};
+
+const resetForm = () => fillForm(null);
+
+const setMode = (nextMode: 'register' | 'edit') => {
+  mode.value = nextMode;
+
+  if (nextMode === 'register') {
+    editingSubdomainId.value = null;
+    resetForm();
+    return;
+  }
+
+  const selected = subdomainStore.selectedSubdomain?.id
+      ? subdomainStore.selectedSubdomain
+      : subdomainStore.subdomains.find((subdomain) => subdomain.id);
+
+  editingSubdomainId.value = selected?.id ?? null;
+  fillForm(selected ?? null);
+};
+
+watch(editingSubdomain, (subdomain) => {
+  if (isEditing.value)
+    fillForm(subdomain);
+});
+
 const saveSubdomain = async () => {
-  if (isSubmitting.value || !form.name.trim())
+  if (isSubmitDisabled.value)
     return;
 
   isSubmitting.value = true;
-  const result = await subdomainStore.registerSubdomain({
+  const payload = {
     name: form.name.trim(),
     urlPhoto: form.urlPhoto?.trim() || null,
-  });
+  };
+  const result = isEditing.value && editingSubdomainId.value
+      ? await subdomainStore.editSubdomain(editingSubdomainId.value, payload)
+      : await subdomainStore.registerSubdomain(payload);
 
   if (result.httpStatusCode === 403) {
     isSubmitting.value = false;
@@ -195,17 +276,28 @@ const saveSubdomain = async () => {
     return;
   }
 
-  showSuccessToast(toast, result.response || t('subdomain.registerSuccess'));
+  showSuccessToast(toast, result.response || (isEditing.value ? t('subdomain.editSuccess') : t('subdomain.registerSuccess')));
   await subdomainStore.fetchSubdomains(true);
+
+  if (isEditing.value && editingSubdomainId.value) {
+    subdomainStore.selectSubdomain(editingSubdomainId.value);
+    resetForm();
+    isSubmitting.value = false;
+    return;
+  }
+
   const registeredSubdomain = subdomainStore.subdomains.find((subdomain) => subdomain.name === form.name.trim());
 
   if (registeredSubdomain)
-    subdomainStore.selectSubdomain(registeredSubdomain.id ?? registeredSubdomain.name);
+    subdomainStore.selectSubdomain(getSubdomainKey(registeredSubdomain));
 
-  form.name = '';
-  form.urlPhoto = null;
+  resetForm();
   isSubmitting.value = false;
 };
+
+onMounted(async () => {
+  await subdomainStore.fetchSubdomains();
+});
 
 const logout = async () => {
   authStore.logout();
@@ -548,6 +640,41 @@ h2 {
   margin-top: 22px;
 }
 
+.operation-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--panel-strong-border);
+  border-radius: 4px;
+  background: var(--panel-strong-field);
+}
+
+.operation-switch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 3px;
+  color: var(--panel-strong-text);
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.operation-switch button.active {
+  color: var(--panel-accent-contrast);
+  background: var(--panel-accent);
+}
+
+.operation-switch button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .subdomain-form label {
   display: grid;
   gap: 6px;
@@ -572,7 +699,17 @@ h2 {
   font-size: 0.8rem;
 }
 
-.subdomain-form :deep(.p-inputtext:enabled:focus) {
+.subdomain-form :deep(.p-select) {
+  width: 100%;
+  border-color: var(--panel-strong-border);
+  border-radius: 3px;
+  color: var(--panel-strong-heading);
+  background: var(--panel-strong-field);
+  font-size: 0.8rem;
+}
+
+.subdomain-form :deep(.p-inputtext:enabled:focus),
+.subdomain-form :deep(.p-select:not(.p-disabled).p-focus) {
   border-color: var(--panel-accent);
   box-shadow: 0 0 0 3px rgba(55, 123, 103, 0.12);
 }

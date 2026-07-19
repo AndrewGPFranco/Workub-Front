@@ -57,7 +57,7 @@
 
           <article class="subdomain-preview">
             <div class="photo-preview">
-              <img v-if="photoPreviewUrl" :src="photoPreviewUrl" :alt="form.name || t('subdomain.photoAlt')">
+              <img v-if="photoPreviewUrl" :src="photoPreviewUrl" :alt="previewVisualLabel">
               <i v-else class="pi pi-building"/>
             </div>
             <div>
@@ -76,7 +76,8 @@
           </div>
 
           <form class="subdomain-form" @submit.prevent="saveSubdomain">
-            <div class="operation-switch" role="group" :aria-label="t('subdomain.operation')">
+            <fieldset class="operation-switch">
+              <legend>{{ t('subdomain.operation') }}</legend>
               <button
                   type="button"
                   :class="{active: mode === 'register'}"
@@ -94,11 +95,12 @@
                 <i class="pi pi-pencil"/>
                 {{ t('subdomain.editMode') }}
               </button>
-            </div>
+            </fieldset>
 
-            <label v-if="isEditing">
-              <span>{{ t('subdomain.editTarget') }}</span>
+            <div v-if="isEditing" class="form-field">
+              <label for="subdomain-edit-target">{{ t('subdomain.editTarget') }}</label>
               <Select
+                  input-id="subdomain-edit-target"
                   v-model="editingSubdomainId"
                   :options="subdomainOptions"
                   option-label="label"
@@ -106,29 +108,33 @@
                   :placeholder="t('subdomain.selectPlaceholder')"
                   :loading="subdomainStore.isLoading"
                   :disabled="isSubmitting || subdomainStore.isLoading"
+                  :title="t('subdomain.editTarget')"
+                  :pt="{label: {title: t('subdomain.editTarget')}}"
                   fluid
               />
-            </label>
+            </div>
 
-            <label>
-              <span>{{ t('subdomain.name') }}</span>
+            <div class="form-field">
+              <label for="subdomain-name">{{ t('subdomain.name') }}</label>
               <InputText
+                  id="subdomain-name"
                   v-model="form.name"
                   :placeholder="t('subdomain.namePlaceholder')"
                   required
                   fluid
               />
-            </label>
+            </div>
 
-            <label>
-              <span>{{ t('subdomain.urlPhoto') }} <small>{{ t('demands.optional') }}</small></span>
+            <div class="form-field">
+              <label for="subdomain-photo-url">{{ t('subdomain.urlPhoto') }} <small>{{ t('demands.optional') }}</small></label>
               <InputText
+                  id="subdomain-photo-url"
                   v-model="form.urlPhoto"
                   type="url"
                   :placeholder="t('subdomain.urlPhotoPlaceholder')"
                   fluid
               />
-            </label>
+            </div>
 
             <Button
                 type="submit"
@@ -221,6 +227,7 @@ const photoPreviewUrl = computed(() => {
   const urlPhoto = form.urlPhoto?.trim();
   return urlPhoto || null;
 });
+const previewVisualLabel = computed(() => form.name.trim() || t('subdomain.previewTitle'));
 
 const fillForm = (subdomain: Subdomain | null) => {
   form.name = subdomain?.name ?? '';
@@ -441,7 +448,7 @@ const logout = async () => {
 .profile-copy span {
   overflow: hidden;
   max-width: 100%;
-  color: #8c938e;
+  color: #6b746f;
   font-size: 0.67rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -454,7 +461,7 @@ const logout = async () => {
   place-items: center;
   border-radius: 13px;
   color: #ffffff;
-  background: #ef774c;
+  background: #b84d2c;
   font-size: 0.72rem;
   font-weight: 900;
 }
@@ -644,10 +651,21 @@ h2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
+  min-width: 0;
+  margin: 0;
   padding: 4px;
   border: 1px solid var(--panel-strong-border);
   border-radius: 4px;
   background: var(--panel-strong-field);
+}
+
+.operation-switch legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
 }
 
 .operation-switch button {
@@ -675,7 +693,13 @@ h2 {
   cursor: not-allowed;
 }
 
-.subdomain-form label {
+.form-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.form-field label {
   display: grid;
   gap: 6px;
   min-width: 0;

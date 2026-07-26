@@ -4,8 +4,12 @@
 
     <main class="workspace">
       <p v-for="note in notes" :key="note.id">
-        {{ note.title}}
+        {{ note.title }}
       </p>
+
+      <router-link :to="{name: 'Note Create'}">
+        Cadastrar
+      </router-link>
     </main>
   </div>
 </template>

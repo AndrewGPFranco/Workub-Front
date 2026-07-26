@@ -38,6 +38,15 @@ const router = createRouter({
             }
         },
         {
+            path: "/notes/new",
+            component: () => import("@/pages/NoteCreateView.vue"),
+            name: "Note Create",
+            meta: {
+                requiresAuth: true,
+                resource: 'NOTES',
+            }
+        },
+        {
             path: "/daily",
             component: () => import("@/pages/DailyView.vue"),
             name: "Daily",

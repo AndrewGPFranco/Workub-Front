@@ -36,12 +36,14 @@
 
             <label>
               <span>{{ t('demands.description') }}</span>
-              <Textarea v-model="form.description" :placeholder="t('demands.descriptionPlaceholder')" rows="6" required fluid/>
+              <Textarea v-model="form.description" :placeholder="t('demands.descriptionPlaceholder')" rows="6" required
+                        fluid/>
             </label>
 
             <label>
               <span>{{ t('demands.reviewNote') }} <small>{{ t('demands.optional') }}</small></span>
-              <Textarea v-model="form.observationToReview" :placeholder="t('demands.reviewNotePlaceholder')" rows="3" fluid/>
+              <Textarea v-model="form.observationToReview" :placeholder="t('demands.reviewNotePlaceholder')" rows="3"
+                        fluid/>
             </label>
 
             <div class="form-row">
@@ -51,7 +53,8 @@
               </label>
               <label>
                 <span>{{ t('demands.priority') }}</span>
-                <Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" fluid/>
+                <Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value"
+                        fluid/>
               </label>
             </div>
 
@@ -63,7 +66,8 @@
             <fieldset>
               <legend>{{ t('demands.observations') }} <small>{{ t('demands.optional') }}</small></legend>
               <div v-for="(_, index) in form.observations" :key="index" class="observation-row">
-                <Textarea v-model="form.observations[index]" :placeholder="t('demands.observationPlaceholder')" rows="2" fluid/>
+                <Textarea v-model="form.observations[index]" :placeholder="t('demands.observationPlaceholder')" rows="2"
+                          fluid/>
                 <Button type="button" icon="pi pi-trash" text severity="danger"
                         :aria-label="t('demands.removeObservation')" @click="removeObservation(index)"/>
               </div>
@@ -164,33 +168,224 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.demand-create-page { min-height: 100dvh; color: var(--wh-text); background: var(--wh-bg); }
-.back-link, .form-actions { display: flex; align-items: center; }
-.create-workspace { width: 100%; padding: 18px 20px 24px; }
-.back-link { width: fit-content; gap: 8px; color: var(--wh-text-soft); font-size: .8rem; font-weight: 700; text-decoration: none; }
-.back-link:hover { color: var(--wh-primary); }
-.create-layout { display: grid; grid-template-columns: minmax(260px, .42fr) minmax(540px, 1fr); gap: 20px; margin-top: 18px; align-items: start; }
-.kicker { margin: 0; color: var(--wh-primary); font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-.create-intro { position: sticky; top: 18px; padding: 22px; border: 1px solid var(--wh-border); border-radius: var(--wh-radius-md); background: var(--wh-surface); }
-.create-intro h1 { max-width: 520px; margin: 12px 0 16px; color: var(--wh-text); font-family: Georgia, serif; font-size: clamp(2.2rem, 3.5vw, 4rem); font-weight: 400; letter-spacing: -.06em; line-height: 1; }
-.create-intro > p:last-of-type { color: var(--wh-text-soft); line-height: 1.65; }
-.create-intro ul { display: grid; gap: 12px; margin: 22px 0 0; padding: 0; color: var(--wh-text-soft); font-size: .8rem; list-style: none; }
-.create-intro li { display: flex; gap: 9px; align-items: center; }
-.create-intro li i { color: var(--wh-primary); }
-.create-card { overflow: hidden; border: 1px solid var(--wh-border); border-radius: var(--wh-radius-md); background: var(--wh-surface); box-shadow: var(--wh-shadow-sm); }
-.create-card > header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 24px; border-bottom: 1px solid var(--wh-border); }
-.create-card h2 { margin: 5px 0 0; font-family: Georgia, serif; font-size: 1.65rem; font-weight: 400; }
-.status-preview { padding: 6px 10px; border: 1px solid var(--wh-primary); border-radius: 20px; color: var(--wh-primary); font-size: .68rem; font-weight: 800; }
-.create-form { display: grid; gap: 18px; padding: 24px; }
-.create-form label { display: grid; gap: 7px; color: var(--wh-text-soft); font-size: .72rem; font-weight: 800; }
-.create-form small, fieldset small { color: var(--wh-text-muted); font-weight: 500; }
-.create-form :deep(.p-inputtext), .create-form :deep(.p-textarea), .create-form :deep(.p-select) { width: 100%; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-fieldset { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 14px; border: 1px solid var(--wh-border); border-radius: var(--wh-radius-sm); }
-legend { padding: 0 5px; color: var(--wh-text-soft); font-size: .72rem; font-weight: 800; }
-.observation-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: start; }
-.add-observation { width: fit-content; padding-inline: 0; }
-.form-actions { justify-content: flex-end; gap: 10px; padding-top: 6px; }
-@media (max-width: 900px) { .create-layout { grid-template-columns: 1fr; } .create-intro { position: static; } .create-intro ul { display: none; } }
-@media (max-width: 480px) { .create-workspace { padding: 14px 12px 18px; } .form-row { grid-template-columns: 1fr; } .create-card > header, .create-form, .create-intro { padding-inline: 16px; } .form-actions { align-items: stretch; flex-direction: column-reverse; } }
+.demand-create-page {
+  min-height: 100dvh;
+  color: var(--wh-text);
+  background: var(--wh-bg);
+}
+
+.back-link, .form-actions {
+  display: flex;
+  align-items: center;
+}
+
+.create-workspace {
+  width: 100%;
+  padding: 18px 20px 24px;
+}
+
+.back-link {
+  width: fit-content;
+  gap: 8px;
+  color: var(--wh-text-soft);
+  font-size: .8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--wh-primary);
+}
+
+.create-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, .42fr) minmax(540px, 1fr);
+  gap: 20px;
+  margin-top: 18px;
+  align-items: start;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--wh-primary);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.create-intro {
+  position: sticky;
+  top: 18px;
+  padding: 22px;
+  border: 1px solid var(--wh-border);
+  border-radius: var(--wh-radius-md);
+  background: var(--wh-surface);
+}
+
+.create-intro h1 {
+  max-width: 520px;
+  margin: 12px 0 16px;
+  color: var(--wh-text);
+  font-family: Georgia, serif;
+  font-size: clamp(2.2rem, 3.5vw, 4rem);
+  font-weight: 400;
+  letter-spacing: -.06em;
+  line-height: 1;
+}
+
+.create-intro > p:last-of-type {
+  color: var(--wh-text-soft);
+  line-height: 1.65;
+}
+
+.create-intro ul {
+  display: grid;
+  gap: 12px;
+  margin: 22px 0 0;
+  padding: 0;
+  color: var(--wh-text-soft);
+  font-size: .8rem;
+  list-style: none;
+}
+
+.create-intro li {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.create-intro li i {
+  color: var(--wh-primary);
+}
+
+.create-card {
+  overflow: hidden;
+  border: 1px solid var(--wh-border);
+  border-radius: var(--wh-radius-md);
+  background: var(--wh-surface);
+  box-shadow: var(--wh-shadow-sm);
+}
+
+.create-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--wh-border);
+}
+
+.create-card h2 {
+  margin: 5px 0 0;
+  font-family: Georgia, serif;
+  font-size: 1.65rem;
+  font-weight: 400;
+}
+
+.status-preview {
+  padding: 6px 10px;
+  border: 1px solid var(--wh-primary);
+  border-radius: 20px;
+  color: var(--wh-primary);
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+.create-form {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.create-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--wh-text-soft);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.create-form small, fieldset small {
+  color: var(--wh-text-muted);
+  font-weight: 500;
+}
+
+.create-form :deep(.p-inputtext), .create-form :deep(.p-textarea), .create-form :deep(.p-select) {
+  width: 100%;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+fieldset {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--wh-border);
+  border-radius: var(--wh-radius-sm);
+}
+
+legend {
+  padding: 0 5px;
+  color: var(--wh-text-soft);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.observation-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: start;
+}
+
+.add-observation {
+  width: fit-content;
+  padding-inline: 0;
+}
+
+.form-actions {
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+@media (max-width: 900px) {
+  .create-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .create-intro {
+    position: static;
+  }
+
+  .create-intro ul {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-workspace {
+    padding: 14px 12px 18px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .create-card > header, .create-form, .create-intro {
+    padding-inline: 16px;
+  }
+
+  .form-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+}
 </style>

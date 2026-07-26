@@ -1,14 +1,5 @@
-import HomeView from '@/pages/HomeView.vue'
-import DailyView from '@/pages/DailyView.vue'
-import DemandsView from '@/pages/DemandsView.vue'
-import DemandCreateView from '@/pages/DemandCreateView.vue'
-import FeedbackView from '@/pages/FeedbackView.vue'
-import LoginUserView from '@/pages/LoginUserView.vue'
 import {createRouter, createWebHistory} from 'vue-router'
-import RegisterUserView from '@/pages/RegisterUserView.vue'
-import AccessDeniedView from '@/pages/AccessDeniedView.vue'
 import {hasValidStoredSession} from '@/stores/auth-store.ts'
-import SubdomainRegisterView from '@/pages/SubdomainRegisterView.vue'
 import {getDefaultAuthorizedRouteName, hasStoredPlanResource} from '@/composables/use-plan-resources.ts'
 
 const router = createRouter({
@@ -16,12 +7,12 @@ const router = createRouter({
     routes: [
         {
             path: "/",
-            component: HomeView,
+            component: () => import("@/pages/HomeView.vue"),
             name: "Home"
         },
         {
             path: "/demands",
-            component: DemandsView,
+            component: () => import("@/pages/DemandsView.vue"),
             name: "Demands",
             meta: {
                 requiresAuth: true,
@@ -30,7 +21,7 @@ const router = createRouter({
         },
         {
             path: "/demands/new",
-            component: DemandCreateView,
+            component: () => import("@/pages/DemandCreateView.vue"),
             name: "Demand Create",
             meta: {
                 requiresAuth: true,
@@ -38,8 +29,17 @@ const router = createRouter({
             }
         },
         {
+            path: "/notes",
+            component: () => import("@/pages/NotesView.vue"),
+            name: "Notes",
+            meta: {
+                requiresAuth: true,
+                resource: 'NOTES',
+            }
+        },
+        {
             path: "/daily",
-            component: DailyView,
+            component: () => import("@/pages/DailyView.vue"),
             name: "Daily",
             meta: {
                 requiresAuth: true,
@@ -48,7 +48,7 @@ const router = createRouter({
         },
         {
             path: "/feedback",
-            component: FeedbackView,
+            component: () => import("@/pages/FeedbackView.vue"),
             name: "Feedback",
             meta: {
                 requiresAuth: true,
@@ -57,7 +57,7 @@ const router = createRouter({
         },
         {
             path: "/subdomains/register",
-            component: SubdomainRegisterView,
+            component: () => import("@/pages/SubdomainRegisterView.vue"),
             name: "Subdomain Register",
             meta: {
                 requiresAuth: true,
@@ -66,7 +66,7 @@ const router = createRouter({
         },
         {
             path: "/access-denied",
-            component: AccessDeniedView,
+            component: () => import("@/pages/AccessDeniedView.vue"),
             name: "Access Denied",
             meta: {
                 requiresAuth: true
@@ -74,7 +74,7 @@ const router = createRouter({
         },
         {
             path: "/auth/login",
-            component: LoginUserView,
+            component: () => import("@/pages/LoginUserView.vue"),
             name: "Login",
             meta: {
                 guestOnly: true
@@ -82,7 +82,7 @@ const router = createRouter({
         },
         {
             path: "/auth/register",
-            component: RegisterUserView,
+            component: () => import("@/pages/RegisterUserView.vue"),
             name: "User Register",
             meta: {
                 guestOnly: true
@@ -100,7 +100,7 @@ router.beforeEach((to) => {
     if (to.meta.requiresAuth && !isAuthenticated)
         return {name: "Login"};
 
-    if (to.meta.resource && !hasStoredPlanResource(to.meta.resource as 'DAILY' | 'DEMANDS' | 'FEEDBACK' | 'SUBDOMAINS')) {
+    if (to.meta.resource && !hasStoredPlanResource(to.meta.resource as 'DAILY' | 'DEMANDS' | 'FEEDBACK' | 'SUBDOMAINS' | 'NOTES')) {
         const defaultRoute = getDefaultAuthorizedRouteName();
 
         if (defaultRoute !== 'Access Denied')

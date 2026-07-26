@@ -278,6 +278,7 @@ const messages = {
         'priority.MEDIUM': 'Média',
         'priority.HIGH': 'Alta',
         'priority.URGENT': 'Urgente',
+        'notes.nav': 'Anotações'
     },
     en: {
         'language.label': 'Language',
@@ -552,6 +553,7 @@ const messages = {
         'priority.MEDIUM': 'Medium',
         'priority.HIGH': 'High',
         'priority.URGENT': 'Urgent',
+        'notes.nav': 'Notes'
     },
 } as const;
 

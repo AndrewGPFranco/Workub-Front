@@ -1,43 +1,6 @@
 <template>
   <div id="page-top" class="demands-page">
-    <header class="site-header">
-      <nav class="navbar" :aria-label="t('demands.mainNav')">
-        <RouterLink :to="{name: defaultRouteName}" class="brand" aria-label="Workhub">
-          <img src="/favicon.png" alt="" class="brand-logo">
-          <span class="brand-copy">Work<span>hub</span></span>
-        </RouterLink>
-
-        <div class="navbar-center">
-          <RouterLink v-if="canAccess('DEMANDS')" class="nav-link active" :to="{name: 'Demands'}"><i
-              class="pi pi-inbox"/><span>{{
-              t('demands.nav')
-            }}</span></RouterLink>
-          <RouterLink v-if="canAccess('DAILY')" class="nav-link" :to="{name: 'Daily'}"><i class="pi pi-calendar-clock"/><span>{{
-              t('daily.nav')
-            }}</span></RouterLink>
-          <RouterLink v-if="canAccess('FEEDBACK')" class="nav-link" :to="{name: 'Feedback'}"><i class="pi pi-comments"/><span>{{
-              t('feedback.nav')
-            }}</span></RouterLink>
-          <RouterLink v-if="canAccess('SUBDOMAINS')" class="nav-link" :to="{name: 'Subdomain Register'}"><i
-              class="pi pi-sitemap"/><span>{{
-              t('subdomain.nav')
-            }}</span></RouterLink>
-        </div>
-
-        <div class="navbar-actions">
-          <SubdomainSwitcher v-if="canAccess('SUBDOMAINS')"/>
-          <LanguageSelect/>
-          <ThemeToggle/>
-          <span class="navbar-divider"/>
-          <div class="profile-copy">
-            <strong>{{ userName }}</strong>
-            <span>{{ authStore.userLogged?.email }}</span>
-          </div>
-          <div class="avatar">{{ userInitials }}</div>
-          <Button icon="pi pi-sign-out" text rounded :aria-label="t('demands.logout')" @click="logout"/>
-        </div>
-      </nav>
-    </header>
+    <AppSidebar/>
 
     <main class="workspace">
       <header class="desk-header">
@@ -619,16 +582,13 @@ import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import {useToast} from 'primevue/usetoast';
-import ThemeToggle from '@/components/ThemeToggle.vue';
-import LanguageSelect from '@/components/LanguageSelect.vue';
-import SubdomainSwitcher from '@/components/SubdomainSwitcher.vue';
+import AppSidebar from "@/components/AppSidebar.vue";
 import {useLanguage} from '@/composables/use-language.ts';
 import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
 import {useDemandStore} from '@/stores/demand-store.ts';
 import {useSubdomainStore} from '@/stores/subdomain-store.ts';
 import {
-  getDefaultAuthorizedRouteName,
   hasStoredPlanResource,
   type PlanResource
 } from '@/composables/use-plan-resources.ts';
@@ -664,7 +624,6 @@ const changeSubdomainModal = ref<HTMLElement | null>(null);
 const authStore = useAuthStore();
 const demandStore = useDemandStore();
 const subdomainStore = useSubdomainStore();
-const defaultRouteName = getDefaultAuthorizedRouteName();
 const canAccess = (resource: PlanResource) => hasStoredPlanResource(resource);
 const formCard = ref<HTMLElement | null>(null);
 const editingDemandId = ref<string | null>(null);
@@ -722,14 +681,6 @@ const emptyForm = (): DemandForm => ({
 
 const form = reactive<DemandForm>(emptyForm());
 
-const userName = computed(() => {
-  const user = authStore.userLogged;
-  return user ? `${user.firstName} ${user.lastName}` : t('demands.user');
-});
-const userInitials = computed(() => {
-  const user = authStore.userLogged;
-  return user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : 'WH';
-});
 const todayLabel = computed(() => new Intl.DateTimeFormat(language.value, {
   day: '2-digit',
   month: 'long'
@@ -790,7 +741,7 @@ const applyFilters = () => {
 };
 
 const prepareDemandForStatus = (status: DemandStatus) => {
-  void router.push({name: 'Demand Create', query: {status}});
+  router.push({name: 'Demand Create', query: {status}});
 };
 
 const openDemandCreation = () => router.push({name: 'Demand Create'});
@@ -1523,9 +1474,6 @@ h2 {
 .search-input {
   width: 100%;
   min-width: 0;
-}
-
-.search-input {
   padding-block: 8px;
   font-size: 0.78rem;
 }

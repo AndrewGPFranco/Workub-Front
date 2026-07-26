@@ -43,7 +43,8 @@ export const getStoredPlanResources = (): PlanResource[] => {
         if (!Array.isArray(claims.resources))
             return [];
 
-        return claims.resources.map(normalizeResource).filter((resource): resource is PlanResource => resource !== null);
+        return claims.resources.map(normalizeResource)
+            .filter((resource): resource is PlanResource => resource !== null);
     } catch (_) {
         return [];
     }
@@ -55,20 +56,15 @@ export const hasStoredPlanResource = (resource: PlanResource) =>
 export const getDefaultAuthorizedRouteName = () => {
     const resources = getStoredPlanResources();
 
-    if (resources.includes('DEMANDS'))
-        return 'Demands';
+    if (resources.includes('DEMANDS')) return 'Demands';
 
-    if (resources.includes('DAILY'))
-        return 'Daily';
+    if (resources.includes('DAILY')) return 'Daily';
 
-    if (resources.includes('FEEDBACK'))
-        return 'Feedback';
+    if (resources.includes('FEEDBACK')) return 'Feedback';
 
-    if (resources.includes('SUBDOMAINS'))
-        return 'Subdomain Register';
+    if (resources.includes('SUBDOMAINS')) return 'Subdomain Register';
 
-    if (resources.includes('NOTES'))
-        return 'Notes';
+    if (resources.includes('NOTES')) return 'Notes';
 
     return 'Access Denied';
 };

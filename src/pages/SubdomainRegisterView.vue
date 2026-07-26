@@ -1,6 +1,6 @@
 <template>
   <div id="page-top" class="subdomain-page">
-    <AppSidebar />
+    <AppSidebar/>
 
     <main class="workspace">
       <header class="desk-header">
@@ -131,31 +131,24 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, reactive, ref, watch} from 'vue';
-import Button from 'primevue/button';
-import InputText from 'primevue/inputtext';
-import Select from 'primevue/select';
-import {useToast} from 'primevue/usetoast';
-import {useLanguage} from '@/composables/use-language.ts';
 import router from '@/router';
+import Button from 'primevue/button';
+import Select from 'primevue/select';
+import InputText from 'primevue/inputtext';
+import {useToast} from 'primevue/usetoast';
 import {useAuthStore} from '@/stores/auth-store.ts';
+import AppSidebar from "@/components/AppSidebar.vue";
+import {useLanguage} from '@/composables/use-language.ts';
+import {computed, onMounted, reactive, ref, watch} from 'vue';
 import {useSubdomainStore} from '@/stores/subdomain-store.ts';
-import {
-  getDefaultAuthorizedRouteName,
-  hasStoredPlanResource,
-  type PlanResource
-} from '@/composables/use-plan-resources.ts';
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 import type {RegisterSubdomain, Subdomain} from '@/types/subdomain/Subdomain.ts';
-import AppSidebar from "@/components/AppSidebar.vue";
 
 const toast = useToast();
-const authStore = useAuthStore();
-const subdomainStore = useSubdomainStore();
-const defaultRouteName = getDefaultAuthorizedRouteName();
-const canAccess = (resource: PlanResource) => hasStoredPlanResource(resource);
-const {language, t} = useLanguage();
 const isSubmitting = ref(false);
+const authStore = useAuthStore();
+const {language, t} = useLanguage();
+const subdomainStore = useSubdomainStore();
 const mode = ref<'register' | 'edit'>('register');
 const editingSubdomainId = ref<string | null>(null);
 
@@ -175,15 +168,6 @@ const editingSubdomain = computed(() =>
 const isSubmitDisabled = computed(() =>
     isSubmitting.value || !form.name.trim() || (isEditing.value && !editingSubdomainId.value),
 );
-
-const userName = computed(() => {
-  const user = authStore.userLogged;
-  return user ? `${user.firstName} ${user.lastName}` : t('demands.user');
-});
-const userInitials = computed(() => {
-  const user = authStore.userLogged;
-  return user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : 'WH';
-});
 const todayLabel = computed(() => new Intl.DateTimeFormat(language.value, {
   day: '2-digit',
   month: 'long',

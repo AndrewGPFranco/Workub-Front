@@ -7,3 +7,10 @@ export type Note = {
     isPinned: boolean,
     isArchived: boolean
 }
+
+export type UpdateNote = {
+    title: string,
+    content: string,
+    idSubdomain: string | null,
+    idNote: string | null,
+}

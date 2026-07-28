@@ -38,7 +38,7 @@ const router = createRouter({
             }
         },
         {
-            path: "/notes/new",
+            path: "/notes/new/:idNote?",
             component: () => import("@/pages/NoteCreateView.vue"),
             name: "Note Create",
             meta: {

@@ -4,7 +4,7 @@
 
     <main class="workspace">
       <p v-for="note in notes" :key="note.id">
-        {{ note.title }}
+        <router-link :to="{path: `/notes/new/${note.id}`}">{{ note.title }}</router-link>
       </p>
 
       <router-link :to="{name: 'Note Create'}">

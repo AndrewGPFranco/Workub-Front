@@ -16,7 +16,6 @@
         </router-link>
       </header>
 
-      <!-- Notes Grid -->
       <section v-if="notes.length" class="notes-grid">
         <router-link
             v-for="note in notes"
@@ -42,7 +41,6 @@
         </router-link>
       </section>
 
-      <!-- Empty State -->
       <section v-else class="notes-empty">
         <div class="empty-icon-wrapper">
           <i class="pi pi-file-edit empty-icon"/>
@@ -59,13 +57,13 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref, watch} from "vue";
 import type {Note} from "@/types/notes/Note.ts";
 import {useNoteStore} from "@/stores/note-store.ts";
+import {computed, onMounted, ref, watch} from "vue";
 import AppSidebar from "@/components/AppSidebar.vue";
+import {useLanguage} from "@/composables/use-language.ts";
 import {useSubdomainStore} from "@/stores/subdomain-store.ts";
 import {hasStoredPlanResource} from "@/composables/use-plan-resources.ts";
-import {useLanguage} from "@/composables/use-language.ts";
 
 const notes = ref<Note[]>([]);
 const noteStore = useNoteStore();

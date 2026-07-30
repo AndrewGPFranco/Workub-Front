@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import type {Note} from "@/types/notes/Note.ts";
 import {useNoteStore} from "@/stores/note-store.ts";
 import AppSidebar from "@/components/AppSidebar.vue";
@@ -38,8 +38,17 @@ onMounted(async () => {
       notes.value = response.data;
   }
 })
+
+watch(
+    () => subdomainStore.selectedSubdomainId,
+    async () => {
+      if (!canAccessSubdomains)
+        return;
+
+      const response = await noteStore.getNotes();
+
+      if (response.httpStatusCode === 200)
+        notes.value = response.data;
+    },
+);
 </script>
-
-<style scoped>
-
-</style>

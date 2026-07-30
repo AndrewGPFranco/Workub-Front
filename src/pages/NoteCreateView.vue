@@ -316,8 +316,8 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, onUnmounted, ref} from "vue";
-import {RouterLink, useRoute} from "vue-router";
+import {onMounted, onUnmounted, ref, watch} from "vue";
+import {RouterLink, useRoute, useRouter} from "vue-router";
 import InputText from "primevue/inputtext";
 import AppSidebar from "@/components/AppSidebar.vue";
 import {useNoteStore} from "@/stores/note-store.ts";
@@ -330,7 +330,8 @@ import {
 import {useSubdomainStore} from "@/stores/subdomain-store.ts";
 import {hasStoredPlanResource} from "@/composables/use-plan-resources.ts";
 
-const route = useRoute()
+const route = useRoute();
+const router = useRouter();
 const title = ref<string>("");
 const content = ref<string>("");
 const idNote = ref<string | undefined>("");
@@ -439,6 +440,15 @@ onUnmounted(async () => {
   if (debounceTimeout) clearTimeout(debounceTimeout);
   await noteStore.updateNote(title.value, content.value, idNote.value);
 })
+
+watch(
+    () => subdomainStore.selectedSubdomainId,
+    async (_newValue, oldValue) => {
+      if (oldValue !== null && oldValue !== undefined) {
+        await router.push({name: 'Notes'});
+      }
+    },
+);
 </script>
 
 <style scoped>

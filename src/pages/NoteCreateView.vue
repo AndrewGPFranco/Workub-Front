@@ -7,6 +7,8 @@
         <i class="pi pi-arrow-left"/>
       </RouterLink>
 
+      <h4>Central das Anotações</h4>
+
       <div class="note-create-layout">
         <section class="note-card">
           <form class="note-form" @submit.prevent="updateNote">
@@ -306,13 +308,6 @@
                 </div>
               </div>
             </div>
-
-            <footer class="form-actions">
-              <RouterLink :to="{name: 'Notes'}">
-                <Button type="button" label="Cancelar" severity="secondary" outlined/>
-              </RouterLink>
-              <Button type="submit" label="Salvar Anotação" icon="pi pi-check"/>
-            </footer>
           </form>
         </section>
       </div>
@@ -321,60 +316,60 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
+import {onMounted, onUnmounted, ref} from "vue";
 import {RouterLink, useRoute} from "vue-router";
-import StarterKit from "@tiptap/starter-kit";
-import {EditorContent, useEditor} from "@tiptap/vue-3";
-import {TaskList} from "@tiptap/extension-task-list";
-import {TaskItem} from "@tiptap/extension-task-item";
-import {Link} from "@tiptap/extension-link";
-import {Image} from "@tiptap/extension-image";
-import {Table} from "@tiptap/extension-table";
-import {TableRow} from "@tiptap/extension-table-row";
-import {TableHeader} from "@tiptap/extension-table-header";
-import {TableCell} from "@tiptap/extension-table-cell";
-import {Highlight} from "@tiptap/extension-highlight";
-import {Underline} from "@tiptap/extension-underline";
-import {Subscript} from "@tiptap/extension-subscript";
-import {Superscript} from "@tiptap/extension-superscript";
-import {TextAlign} from "@tiptap/extension-text-align";
-import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import AppSidebar from "@/components/AppSidebar.vue";
 import {useNoteStore} from "@/stores/note-store.ts";
 import type ResponseAPI from "@/utils/ResponseAPI.ts";
 import type {Note} from "@/types/notes/Note.ts";
-import router from "@/router";
-import {showSuccessToast} from "@/utils/toast.ts";
-import {useToast} from "primevue/usetoast";
+import {
+  EditorContent, useEditor, StarterKit, TaskList, TaskItem, Image, Table,
+  TableRow, TableHeader, TableCell, Highlight, Subscript, Superscript, TextAlign
+} from "@/modules/tiptap";
+import {useSubdomainStore} from "@/stores/subdomain-store.ts";
+import {hasStoredPlanResource} from "@/composables/use-plan-resources.ts";
 
 const route = useRoute()
-const toast = useToast();
 const title = ref<string>("");
 const content = ref<string>("");
 const idNote = ref<string | undefined>("");
+const canAccessSubdomains = hasStoredPlanResource('SUBDOMAINS');
+
+let debounceTimeout: number | undefined;
 
 const noteStore = useNoteStore();
+const subdomainStore = useSubdomainStore();
+
 const editor = useEditor({
   content: content.value,
   extensions: [
-    StarterKit,
+    StarterKit.configure({
+      link: {
+        openOnClick: false,
+        HTMLAttributes: {rel: 'noopener noreferrer', target: '_blank'}
+      }
+    }),
     TaskList,
     TaskItem.configure({nested: true}),
-    Link.configure({openOnClick: false, HTMLAttributes: {rel: 'noopener noreferrer', target: '_blank'}}),
     Image,
     Table.configure({resizable: true}),
     TableRow,
     TableHeader,
     TableCell,
     Highlight,
-    Underline,
     Subscript,
     Superscript,
     TextAlign.configure({types: ['heading', 'paragraph']}),
   ],
   onUpdate: ({editor}) => {
     content.value = editor.getHTML();
+
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+
+    debounceTimeout = setTimeout(() => {
+      updateNote();
+    }, 4000);
   }
 });
 
@@ -407,36 +402,42 @@ const addImage = () => {
 };
 
 const updateNote = async () => {
-  if (!title.value.length)
-    console.log("ERRO")
-
   const data = await noteStore.updateNote(title.value, content.value, idNote.value);
 
-  updateContent(data, true);
-
-  await router.push({name: "Notes"});
+  updateContent(data);
 };
 
-const updateContent = (data: ResponseAPI<Note>, isUpdate: boolean) => {
+const updateContent = (data: ResponseAPI<Note>) => {
   if (!data.isError) {
     title.value = data.response.title;
     content.value = data.response.content;
 
-    editor.value?.commands.setContent(data.response.content);
-
-    if (isUpdate)
-      showSuccessToast(toast, "Anotação salva!");
+    if (editor.value && !editor.value.isDestroyed) {
+      editor.value.commands.setContent(data.response.content);
+    }
   }
 }
 
 onMounted(async () => {
+  const selectedSubdomainId = subdomainStore.selectedSubdomainId;
+
+  if (selectedSubdomainId === null) {
+    if (canAccessSubdomains)
+      await subdomainStore.fetchSubdomains();
+  }
+
   const param = route.params.idNote;
   idNote.value = Array.isArray(param) ? param[0] : (param || "");
 
   if (idNote.value) {
     const data: ResponseAPI<Note> = await noteStore.getNoteByID(idNote.value);
-    updateContent(data, false);
+    updateContent(data);
   }
+})
+
+onUnmounted(async () => {
+  if (debounceTimeout) clearTimeout(debounceTimeout);
+  await noteStore.updateNote(title.value, content.value, idNote.value);
 })
 </script>
 
@@ -513,12 +514,6 @@ onMounted(async () => {
   flex-direction: column;
   flex: 0 0 auto;
   gap: 6px;
-}
-
-.field-label {
-  color: var(--wh-text);
-  font-size: 0.875rem;
-  font-weight: 600;
 }
 
 .note-title-input {
@@ -804,17 +799,6 @@ onMounted(async () => {
   margin: 1.5em 0;
 }
 
-.form-actions {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 4px;
-  padding-top: 14px;
-  border-top: 1px solid var(--wh-border);
-}
-
 @media (max-width: 640px) {
   .note-create-workspace {
     padding: 14px 12px 18px;
@@ -833,16 +817,6 @@ onMounted(async () => {
   .toolbar-btn {
     min-width: 30px;
     height: 30px;
-  }
-
-  .form-actions {
-    flex-direction: column-reverse;
-    align-items: stretch;
-  }
-
-  .form-actions a,
-  .form-actions .p-button {
-    width: 100%;
   }
 }
 </style>

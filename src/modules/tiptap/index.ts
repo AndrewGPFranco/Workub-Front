@@ -1,0 +1,15 @@
+export { default as StarterKit } from "@tiptap/starter-kit";
+export { EditorContent, useEditor } from "@tiptap/vue-3";
+export { TaskList } from "@tiptap/extension-task-list";
+export { TaskItem } from "@tiptap/extension-task-item";
+export { Link } from "@tiptap/extension-link";
+export { Image } from "@tiptap/extension-image";
+export { Table } from "@tiptap/extension-table";
+export { TableRow } from "@tiptap/extension-table-row";
+export { TableHeader } from "@tiptap/extension-table-header";
+export { TableCell } from "@tiptap/extension-table-cell";
+export { Highlight } from "@tiptap/extension-highlight";
+export { Underline } from "@tiptap/extension-underline";
+export { Subscript } from "@tiptap/extension-subscript";
+export { Superscript } from "@tiptap/extension-superscript";
+export { TextAlign } from "@tiptap/extension-text-align";

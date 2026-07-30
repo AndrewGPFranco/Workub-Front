@@ -127,5 +127,8 @@ export const useSubdomainStore = defineStore('subdomain-store', {
         selectedSubdomainId(): string | null {
             return this.selectedSubdomain?.id ?? null;
         },
+        getSubdomains(): Subdomain[] {
+            return this.subdomains;
+        }
     },
 });

@@ -186,14 +186,6 @@ const form = reactive<RegisterFeedback>({
   peopleFeedback: '',
 });
 
-const userName = computed(() => {
-  const user = authStore.userLogged;
-  return user ? `${user.firstName} ${user.lastName}` : t('demands.user');
-});
-const userInitials = computed(() => {
-  const user = authStore.userLogged;
-  return user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : 'WH';
-});
 const todayLabel = computed(() => new Intl.DateTimeFormat(language.value, {
   day: '2-digit',
   month: 'long',
@@ -277,11 +269,6 @@ const formatMonth = (month: number | string) => {
 
 const focusForm = () => {
   formCard.value?.scrollIntoView({behavior: 'smooth', block: 'start'});
-};
-
-const logout = async () => {
-  authStore.logout();
-  await router.push({name: 'Login'});
 };
 
 watch(

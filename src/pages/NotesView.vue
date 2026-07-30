@@ -16,18 +16,27 @@
 
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
-import AppSidebar from "@/components/AppSidebar.vue";
 import type {Note} from "@/types/notes/Note.ts";
 import {useNoteStore} from "@/stores/note-store.ts";
+import AppSidebar from "@/components/AppSidebar.vue";
+import {useSubdomainStore} from "@/stores/subdomain-store.ts";
+import {hasStoredPlanResource} from "@/composables/use-plan-resources.ts";
 
 const notes = ref<Note[]>([]);
 const noteStore = useNoteStore();
+const subdomainStore = useSubdomainStore();
+const canAccessSubdomains = hasStoredPlanResource('SUBDOMAINS');
 
 onMounted(async () => {
-  const response = await noteStore.getNotes();
+  if (canAccessSubdomains)
+    await subdomainStore.fetchSubdomains();
 
-  if (response.httpStatusCode === 200)
-    notes.value = response.data;
+  if (subdomainStore.getSubdomains.length) {
+    const response = await noteStore.getNotes();
+
+    if (response.httpStatusCode === 200)
+      notes.value = response.data;
+  }
 })
 </script>
 

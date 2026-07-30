@@ -3,11 +3,13 @@
     <AppSidebar/>
 
     <main class="workspace note-create-workspace">
-      <RouterLink :to="{name: 'Notes'}" class="back-link">
-        <i class="pi pi-arrow-left"/>
-      </RouterLink>
-
-      <h4>Central das Anotações</h4>
+      <header class="note-create-header">
+        <RouterLink :to="{name: 'Notes'}" class="back-link" aria-label="Voltar para as anotações">
+          <i class="pi pi-arrow-left"/>
+          <span>Voltar</span>
+        </RouterLink>
+        <p class="note-create-title">Central das Anotações</p>
+      </header>
 
       <div class="note-create-layout">
         <section class="note-card">
@@ -473,22 +475,46 @@ watch(
   overflow: hidden;
 }
 
+.note-create-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+  min-height: 36px;
+  margin-bottom: 14px;
+}
+
 .back-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   width: fit-content;
-  margin-bottom: 12px;
+  min-height: 32px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid var(--wh-border);
+  border-radius: var(--wh-radius-sm);
+  background: var(--wh-surface);
   color: var(--wh-text-soft);
   font-size: 0.8rem;
   font-weight: 700;
   text-decoration: none;
-  transition: color 150ms ease;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
   flex: 0 0 auto;
 }
 
 .back-link:hover {
   color: var(--wh-primary);
+  border-color: var(--wh-primary);
+  background: var(--wh-primary-soft);
+}
+
+.note-create-title {
+  margin: 0;
+  color: var(--wh-text);
+  font-size: 0.875rem;
+  font-weight: 750;
+  letter-spacing: -0.015em;
 }
 
 .note-create-layout {
@@ -817,6 +843,20 @@ watch(
 
   .note-card {
     padding: 16px;
+  }
+
+  .note-create-header {
+    margin-bottom: 10px;
+  }
+
+  .back-link span {
+    display: none;
+  }
+
+  .back-link {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
   }
 
   .editor-toolbar {

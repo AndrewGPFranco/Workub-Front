@@ -343,7 +343,7 @@ const hasSavedBeforeLeaving = ref(false);
 const canAccessSubdomains = hasStoredPlanResource('SUBDOMAINS');
 const {t} = useLanguage();
 
-let debounceTimeout: number | undefined;
+let debounceTimeout: ReturnType<typeof setTimeout> | undefined;
 
 const noteStore = useNoteStore();
 const subdomainStore = useSubdomainStore();
@@ -408,25 +408,36 @@ const addImage = () => {
     editor.value.chain().focus().setImage({src: url}).run();
 };
 
-const updateNote = async () => {
+const updateNote = async (): Promise<ResponseAPI<Note>> => {
+  const isNewNote = !idNote.value;
   const data = await noteStore.updateNote(title.value, content.value, idNote.value);
 
   updateContent(data);
+
+  if (!data.isError && isNewNote)
+    await router.replace({name: 'Note Create', params: {idNote: data.response.id}});
+
+  return data;
 };
 
 const goBackToNotes = async () => {
-  await updateNote();
+  const data = await updateNote();
+
+  if (data.isError)
+    return;
+
   hasSavedBeforeLeaving.value = true;
   await router.push({name: 'Notes'});
 };
 
-const updateContent = (data: ResponseAPI<Note>) => {
+const updateContent = (data: ResponseAPI<Note>, syncEditor = false) => {
   if (!data.isError) {
+    idNote.value = data.response.id;
     title.value = data.response.title;
     content.value = data.response.content;
 
-    if (editor.value && !editor.value.isDestroyed) {
-      editor.value.commands.setContent(data.response.content);
+    if (syncEditor && editor.value && !editor.value.isDestroyed) {
+      editor.value.commands.setContent(data.response.content, {emitUpdate: false});
     }
   }
 }
@@ -444,7 +455,7 @@ onMounted(async () => {
 
   if (idNote.value) {
     const data: ResponseAPI<Note> = await noteStore.getNoteByID(idNote.value);
-    updateContent(data);
+    updateContent(data, true);
   }
 })
 

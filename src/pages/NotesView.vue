@@ -7,7 +7,7 @@
         <div class="notes-header-text">
           <p class="notes-eyebrow">{{ t('notes.organizationCenter') }} <span>/</span> {{ todayLabel }}</p>
           <h1 class="notes-title">{{ t('notes.my') }}<br><em>{{ t('notes.title') }}</em></h1>
-          <p class="notes-subtitle">{{ notes.length }} {{ notes.length === 1 ? t('notes.note') : t('notes.notes') }}</p>
+          <p class="notes-subtitle">{{ totalNotes }} {{ totalNotes === 1 ? t('notes.note') : t('notes.notes') }}</p>
         </div>
 
         <router-link :to="{name: 'Note Create'}" class="btn-new-note">
@@ -100,6 +100,7 @@ const canAccessSubdomains = hasStoredPlanResource('SUBDOMAINS');
 const notes = computed(() => responsePagination.value.content ?? []);
 const responsePagination = ref<PageResponse<Note>>({} as PageResponse<Note>);
 const rowsPerPage = computed(() => responsePagination.value.pageSize || 10);
+const totalNotes = computed(() => responsePagination.value.totalElements ?? 0);
 
 const totalRecords = computed(() => {
   const {pageSize = rowsPerPage.value, totalElements = 0, totalPages = 0} = responsePagination.value;

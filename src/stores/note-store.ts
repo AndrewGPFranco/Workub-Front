@@ -3,6 +3,7 @@ import {defineStore} from "pinia";
 import ResponseAPI from "@/utils/ResponseAPI.ts";
 import type {Note, UpdateNote} from "@/types/notes/Note.ts";
 import {useSubdomainStore} from "@/stores/subdomain-store.ts";
+import type {PageResponse} from "@/types/http/PageResponse.ts";
 
 const TOKEN_STORAGE_KEY = 'token';
 
@@ -19,14 +20,14 @@ export const useNoteStore = defineStore('note-store', {
                 Authorization: `Bearer ${localStorage.getItem(TOKEN_STORAGE_KEY) ?? ''}`,
             };
         },
-        async getNotes(): Promise<ResponseAPI<Note[]>> {
-            let url = `${this.url}/api/v1/notes/`;
+        async getNotes(currentPage: number): Promise<ResponseAPI<PageResponse<Note>>> {
+            let url = `${this.url}/api/v1/notes/?page=${currentPage}`;
 
             if (this.selectedSubdomainId() !== null)
-                url = `${this.url}/api/v1/notes/subdomain/${this.selectedSubdomainId()}`;
+                url = `${this.url}/api/v1/notes/subdomain/${this.selectedSubdomainId()}?page=${currentPage}`;
 
             try {
-                const {data} = await axios.get<ResponseAPI<Note[]>>(url, {
+                const {data} = await axios.get<ResponseAPI<PageResponse<Note>>>(url, {
                     headers: this.authorizationHeader(),
                 })
 

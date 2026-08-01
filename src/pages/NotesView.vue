@@ -5,14 +5,14 @@
     <main class="workspace notes-workspace">
       <header class="notes-header">
         <div class="notes-header-text">
-          <p class="notes-eyebrow">Central de organização <span>/</span> {{ todayLabel }}</p>
-          <h1 class="notes-title">Minhas<br><em>Anotações</em></h1>
-          <p class="notes-subtitle">{{ notes.length }} {{ notes.length === 1 ? 'nota' : 'notas' }}</p>
+          <p class="notes-eyebrow">{{ t('notes.organizationCenter') }} <span>/</span> {{ todayLabel }}</p>
+          <h1 class="notes-title">{{ t('notes.my') }}<br><em>{{ t('notes.title') }}</em></h1>
+          <p class="notes-subtitle">{{ notes.length }} {{ notes.length === 1 ? t('notes.note') : t('notes.notes') }}</p>
         </div>
 
         <router-link :to="{name: 'Note Create'}" class="btn-new-note">
           <i class="pi pi-plus"/>
-          <span>Nova nota</span>
+          <span>{{ t('notes.new') }}</span>
         </router-link>
       </header>
 
@@ -25,8 +25,8 @@
           <button
               type="button"
               class="btn-delete-note"
-              aria-label="Excluir anotação"
-              title="Excluir anotação"
+              :aria-label="t('notes.delete')"
+              :title="t('notes.delete')"
               @click="deleteNote(note)"
           >
             <i class="pi pi-trash"/>
@@ -34,8 +34,9 @@
 
           <router-link :to="{path: `/notes/new/${note.id}`}" class="note-card-link">
             <div class="note-card-header">
-              <h2 class="note-card-title">{{ note.title || 'Sem título' }}</h2>
-              <span v-if="note.isPinned" class="note-pin-icon" title="Fixada" aria-label="Nota fixada">
+              <h2 class="note-card-title">{{ note.title || t('notes.untitled') }}</h2>
+              <span v-if="note.isPinned" class="note-pin-icon" :title="t('notes.pinned')"
+                    :aria-label="t('notes.pinned')">
                 <i class="pi pi-bookmark-fill"/>
               </span>
             </div>
@@ -56,43 +57,64 @@
         <div class="empty-icon-wrapper">
           <i class="pi pi-file-edit empty-icon"/>
         </div>
-        <h2 class="empty-title">Nenhuma anotação ainda</h2>
-        <p class="empty-description">Crie sua primeira nota para começar a organizar suas ideias.</p>
+        <h2 class="empty-title">{{ t('notes.emptyTitle') }}</h2>
+        <p class="empty-description">{{ t('notes.emptyDescription') }}</p>
         <router-link :to="{name: 'Note Create'}" class="btn-empty-create">
           <i class="pi pi-plus"/>
-          Criar primeira nota
+          {{ t('notes.createFirst') }}
         </router-link>
       </section>
+
+      <div class="notes-pagination">
+        <Paginator
+            :first="currentPage * rowsPerPage"
+            :rows="rowsPerPage"
+            :totalRecords="totalRecords"
+            @page="onPageChange"
+        />
+      </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
 import {useToast} from "primevue/usetoast";
+import Paginator from 'primevue/paginator';
 import type {Note} from "@/types/notes/Note.ts";
 import {useNoteStore} from "@/stores/note-store.ts";
 import {computed, onMounted, ref, watch} from "vue";
 import AppSidebar from "@/components/AppSidebar.vue";
 import {useLanguage} from "@/composables/use-language.ts";
 import {useSubdomainStore} from "@/stores/subdomain-store.ts";
+import type {PageResponse} from "@/types/http/PageResponse.ts";
 import {showErrorToast, showSuccessToast} from "@/utils/toast.ts";
 import {hasStoredPlanResource} from "@/composables/use-plan-resources.ts";
 
 const toast = useToast();
-const notes = ref<Note[]>([]);
 const noteStore = useNoteStore();
+const currentPage = ref<number>(0);
+const {language, t} = useLanguage();
 const subdomainStore = useSubdomainStore();
+const isInitializingSubdomains = ref(false);
 const canAccessSubdomains = hasStoredPlanResource('SUBDOMAINS');
-const {language} = useLanguage();
+const notes = computed(() => responsePagination.value.content ?? []);
+const responsePagination = ref<PageResponse<Note>>({} as PageResponse<Note>);
+const rowsPerPage = computed(() => responsePagination.value.pageSize || 10);
+
+const totalRecords = computed(() => {
+  const {pageSize = rowsPerPage.value, totalElements = 0, totalPages = 0} = responsePagination.value;
+  return totalElements > totalPages ? totalElements : totalPages * pageSize;
+});
+
 const todayLabel = computed(() => new Intl.DateTimeFormat(language.value, {
   day: '2-digit',
   month: 'long',
 }).format(new Date()));
 
 const stripHtml = (html: string): string => {
-  if (!html) return 'Nota vazia...';
+  if (!html) return t('notes.empty');
   const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  return text.length > 120 ? text.slice(0, 120) + '…' : text || 'Nota vazia...';
+  return text.length > 120 ? text.slice(0, 120) + '…' : text || t('notes.empty');
 };
 
 const formatDate = (date: Date): string => {
@@ -103,11 +125,11 @@ const formatDate = (date: Date): string => {
   const diffHour = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
 
-  if (diffMin < 1) return 'Agora mesmo';
-  if (diffMin < 60) return `${diffMin}min atrás`;
-  if (diffHour < 24) return `${diffHour}h atrás`;
-  if (diffDay < 7) return `${diffDay}d atrás`;
-  return d.toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'});
+  if (diffMin < 1) return t('notes.now');
+  if (diffMin < 60) return `${diffMin}${t('notes.minutesAgo')}`;
+  if (diffHour < 24) return `${diffHour}${t('notes.hoursAgo')}`;
+  if (diffDay < 7) return `${diffDay}${t('notes.daysAgo')}`;
+  return d.toLocaleDateString(language.value, {day: '2-digit', month: 'short'});
 };
 
 const deleteNote = async (note: Note): Promise<void> => {
@@ -116,38 +138,44 @@ const deleteNote = async (note: Note): Promise<void> => {
   if (!response.isError) {
     showSuccessToast(toast, response.response)
 
-    await fetchSubdomains();
+    await fetchNotes();
     return;
   }
 
-  showErrorToast(toast, "Ocorreu um erro ao deletar anotação, tente novamente!");
+  showErrorToast(toast, t('notes.deleteError'));
 }
 
-async function fetchSubdomains() {
-  notes.value = [];
-  if (canAccessSubdomains)
-    await subdomainStore.fetchSubdomains();
+async function fetchNotes() {
+  const response = await noteStore.getNotes(currentPage.value);
 
-  const response = await noteStore.getNotes();
-
-  if (response.httpStatusCode === 200)
-    notes.value = response.data;
+  if (response.httpStatusCode === 200) {
+    responsePagination.value = response.data;
+  }
 }
+
+const onPageChange = async ({page}: { page: number }) => {
+  currentPage.value = page;
+  await fetchNotes();
+};
 
 onMounted(async () => {
-  await fetchSubdomains();
-})
+  if (canAccessSubdomains) {
+    isInitializingSubdomains.value = true;
+    await subdomainStore.fetchSubdomains();
+    isInitializingSubdomains.value = false;
+  }
+
+  await fetchNotes();
+});
 
 watch(
     () => subdomainStore.selectedSubdomainId,
     async () => {
-      if (!canAccessSubdomains)
+      if (!canAccessSubdomains || isInitializingSubdomains.value)
         return;
 
-      const response = await noteStore.getNotes();
-
-      if (response.httpStatusCode === 200)
-        notes.value = response.data;
+      currentPage.value = 0;
+      await fetchNotes();
     },
 );
 </script>
@@ -252,6 +280,12 @@ watch(
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
   gap: 18px;
+}
+
+.notes-pagination {
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding-top: 24px;
 }
 
 .note-card {

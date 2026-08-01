@@ -4,11 +4,12 @@
 
     <main class="workspace note-create-workspace">
       <header class="note-create-header">
-        <RouterLink :to="{name: 'Notes'}" class="back-link" aria-label="Voltar para as anotações">
+        <RouterLink :to="{name: 'Notes'}" class="back-link" :aria-label="t('notes.backAriaLabel')"
+                    @click.prevent="goBackToNotes">
           <i class="pi pi-arrow-left"/>
-          <span>Voltar</span>
+          <span>{{ t('notes.back') }}</span>
         </RouterLink>
-        <p class="note-create-title">Central das Anotações</p>
+        <p class="note-create-title">{{ t('notes.center') }}</p>
       </header>
 
       <div class="note-create-layout">
@@ -27,8 +28,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('bold') }"
                       @click="editor.chain().focus().toggleBold().run()"
-                      title="Negrito (**texto**)"
-                      aria-label="Negrito"
+                      :title="t('notes.toolbar.bold')"
+                      :aria-label="t('notes.toolbar.bold')"
                   >
                     <strong>B</strong>
                   </button>
@@ -38,8 +39,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('italic') }"
                       @click="editor.chain().focus().toggleItalic().run()"
-                      title="Itálico (*texto*)"
-                      aria-label="Itálico"
+                      :title="t('notes.toolbar.italic')"
+                      :aria-label="t('notes.toolbar.italic')"
                   >
                     <span class="format-italic">I</span>
                   </button>
@@ -49,8 +50,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('underline') }"
                       @click="editor.chain().focus().toggleUnderline().run()"
-                      title="Sublinhado (<u>texto</u>)"
-                      aria-label="Sublinhado"
+                      :title="t('notes.toolbar.underline')"
+                      :aria-label="t('notes.toolbar.underline')"
                   >
                     <span class="format-underline">U</span>
                   </button>
@@ -60,8 +61,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('strike') }"
                       @click="editor.chain().focus().toggleStrike().run()"
-                      title="Tachado (~~texto~~)"
-                      aria-label="Tachado"
+                      :title="t('notes.toolbar.strike')"
+                      :aria-label="t('notes.toolbar.strike')"
                   >
                     <span class="format-strike">S</span>
                   </button>
@@ -71,8 +72,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('highlight') }"
                       @click="editor.chain().focus().toggleHighlight().run()"
-                      title="Destaque (==texto==)"
-                      aria-label="Destaque"
+                      :title="t('notes.toolbar.highlight')"
+                      :aria-label="t('notes.toolbar.highlight')"
                   >
                     <span class="format-highlight">H</span>
                   </button>
@@ -82,8 +83,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('code') }"
                       @click="editor.chain().focus().toggleCode().run()"
-                      title="Código Inline (`código`)"
-                      aria-label="Código Inline"
+                      :title="t('notes.toolbar.inlineCode')"
+                      :aria-label="t('notes.toolbar.inlineCode')"
                   >
                     <span class="format-code">&lt;/&gt;</span>
                   </button>
@@ -93,8 +94,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('subscript') }"
                       @click="editor.chain().focus().toggleSubscript().run()"
-                      title="Subscrito (X₂)"
-                      aria-label="Subscrito"
+                      :title="t('notes.toolbar.subscript')"
+                      :aria-label="t('notes.toolbar.subscript')"
                   >
                     <sub>X₂</sub>
                   </button>
@@ -104,8 +105,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('superscript') }"
                       @click="editor.chain().focus().toggleSuperscript().run()"
-                      title="Sobrescrito (X²)"
-                      aria-label="Sobrescrito"
+                      :title="t('notes.toolbar.superscript')"
+                      :aria-label="t('notes.toolbar.superscript')"
                   >
                     <sup>X²</sup>
                   </button>
@@ -117,8 +118,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('heading', { level: 1 }) }"
                       @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
-                      title="Título 1 (# )"
-                      aria-label="Título 1"
+                      :title="t('notes.toolbar.heading1')"
+                      :aria-label="t('notes.toolbar.heading1')"
                   >
                     H1
                   </button>
@@ -128,8 +129,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('heading', { level: 2 }) }"
                       @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
-                      title="Título 2 (## )"
-                      aria-label="Título 2"
+                      :title="t('notes.toolbar.heading2')"
+                      :aria-label="t('notes.toolbar.heading2')"
                   >
                     H2
                   </button>
@@ -139,8 +140,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('heading', { level: 3 }) }"
                       @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
-                      title="Título 3 (### )"
-                      aria-label="Título 3"
+                      :title="t('notes.toolbar.heading3')"
+                      :aria-label="t('notes.toolbar.heading3')"
                   >
                     H3
                   </button>
@@ -152,8 +153,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('bulletList') }"
                       @click="editor.chain().focus().toggleBulletList().run()"
-                      title="Lista com Marcadores (- )"
-                      aria-label="Lista com Marcadores"
+                      :title="t('notes.toolbar.bulletList')"
+                      :aria-label="t('notes.toolbar.bulletList')"
                   >
                     <i class="pi pi-list"/>
                   </button>
@@ -163,8 +164,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('orderedList') }"
                       @click="editor.chain().focus().toggleOrderedList().run()"
-                      title="Lista Numerada (1. )"
-                      aria-label="Lista Numerada"
+                      :title="t('notes.toolbar.orderedList')"
+                      :aria-label="t('notes.toolbar.orderedList')"
                   >
                     <span class="format-ol">1.</span>
                   </button>
@@ -174,8 +175,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('taskList') }"
                       @click="editor.chain().focus().toggleTaskList().run()"
-                      title="Lista de Tarefas Checkbox (- [ ])"
-                      aria-label="Lista de Tarefas Checkbox"
+                      :title="t('notes.toolbar.taskList')"
+                      :aria-label="t('notes.toolbar.taskList')"
                   >
                     <i class="pi pi-check-square"/>
                   </button>
@@ -187,8 +188,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('blockquote') }"
                       @click="editor.chain().focus().toggleBlockquote().run()"
-                      title="Citação (> )"
-                      aria-label="Citação"
+                      :title="t('notes.toolbar.quote')"
+                      :aria-label="t('notes.toolbar.quote')"
                   >
                     <span class="format-quote">“</span>
                   </button>
@@ -198,8 +199,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('codeBlock') }"
                       @click="editor.chain().focus().toggleCodeBlock().run()"
-                      title="Bloco de Código (```)"
-                      aria-label="Bloco de Código"
+                      :title="t('notes.toolbar.codeBlock')"
+                      :aria-label="t('notes.toolbar.codeBlock')"
                   >
                     <i class="pi pi-code"/>
                   </button>
@@ -208,8 +209,8 @@
                       type="button"
                       class="toolbar-btn"
                       @click="editor.chain().focus().setHorizontalRule().run()"
-                      title="Linha Divisória (---)"
-                      aria-label="Linha Divisória"
+                      :title="t('notes.toolbar.horizontalRule')"
+                      :aria-label="t('notes.toolbar.horizontalRule')"
                   >
                     <span class="format-hr">—</span>
                   </button>
@@ -219,8 +220,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive('link') }"
                       @click="setLink"
-                      title="Inserir Link ([texto](url))"
-                      aria-label="Inserir Link"
+                      :title="t('notes.toolbar.link')"
+                      :aria-label="t('notes.toolbar.link')"
                   >
                     <i class="pi pi-link"/>
                   </button>
@@ -229,8 +230,8 @@
                       type="button"
                       class="toolbar-btn"
                       @click="addImage"
-                      title="Inserir Imagem (![alt](url))"
-                      aria-label="Inserir Imagem"
+                      :title="t('notes.toolbar.image')"
+                      :aria-label="t('notes.toolbar.image')"
                   >
                     <i class="pi pi-image"/>
                   </button>
@@ -239,8 +240,8 @@
                       type="button"
                       class="toolbar-btn"
                       @click="editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()"
-                      title="Inserir Tabela"
-                      aria-label="Inserir Tabela"
+                      :title="t('notes.toolbar.table')"
+                      :aria-label="t('notes.toolbar.table')"
                   >
                     <i class="pi pi-table"/>
                   </button>
@@ -252,8 +253,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive({ textAlign: 'left' }) }"
                       @click="editor.chain().focus().setTextAlign('left').run()"
-                      title="Alinhar à Esquerda"
-                      aria-label="Alinhar à Esquerda"
+                      :title="t('notes.toolbar.alignLeft')"
+                      :aria-label="t('notes.toolbar.alignLeft')"
                   >
                     <i class="pi pi-align-left"/>
                   </button>
@@ -263,8 +264,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive({ textAlign: 'center' }) }"
                       @click="editor.chain().focus().setTextAlign('center').run()"
-                      title="Centralizar"
-                      aria-label="Centralizar"
+                      :title="t('notes.toolbar.alignCenter')"
+                      :aria-label="t('notes.toolbar.alignCenter')"
                   >
                     <i class="pi pi-align-center"/>
                   </button>
@@ -274,8 +275,8 @@
                       class="toolbar-btn"
                       :class="{ 'is-active': editor.isActive({ textAlign: 'right' }) }"
                       @click="editor.chain().focus().setTextAlign('right').run()"
-                      title="Alinhar à Direita"
-                      aria-label="Alinhar à Direita"
+                      :title="t('notes.toolbar.alignRight')"
+                      :aria-label="t('notes.toolbar.alignRight')"
                   >
                     <i class="pi pi-align-right"/>
                   </button>
@@ -287,8 +288,8 @@
                       class="toolbar-btn"
                       @click="editor.chain().focus().undo().run()"
                       :disabled="!editor.can().undo()"
-                      title="Desfazer (Ctrl+Z)"
-                      aria-label="Desfazer"
+                      :title="t('notes.toolbar.undo')"
+                      :aria-label="t('notes.toolbar.undo')"
                   >
                     <i class="pi pi-undo"/>
                   </button>
@@ -298,8 +299,8 @@
                       class="toolbar-btn"
                       @click="editor.chain().focus().redo().run()"
                       :disabled="!editor.can().redo()"
-                      title="Refazer (Ctrl+Y)"
-                      aria-label="Refazer"
+                      :title="t('notes.toolbar.redo')"
+                      :aria-label="t('notes.toolbar.redo')"
                   >
                     <i class="pi pi-refresh"/>
                   </button>
@@ -331,13 +332,16 @@ import {
 } from "@/modules/tiptap";
 import {useSubdomainStore} from "@/stores/subdomain-store.ts";
 import {hasStoredPlanResource} from "@/composables/use-plan-resources.ts";
+import {useLanguage} from "@/composables/use-language.ts";
 
 const route = useRoute();
 const router = useRouter();
 const title = ref<string>("");
 const content = ref<string>("");
 const idNote = ref<string | undefined>("");
+const hasSavedBeforeLeaving = ref(false);
 const canAccessSubdomains = hasStoredPlanResource('SUBDOMAINS');
+const {t} = useLanguage();
 
 let debounceTimeout: number | undefined;
 
@@ -386,7 +390,7 @@ const setLink = () => {
     return;
 
   const previousUrl = editor.value.getAttributes('link').href;
-  const url = window.prompt('URL do Link:', previousUrl);
+  const url = window.prompt(t('notes.linkUrlPrompt'), previousUrl);
 
   if (url === null)
     return;
@@ -399,7 +403,7 @@ const setLink = () => {
 
 const addImage = () => {
   if (!editor.value) return;
-  const url = window.prompt('URL da Imagem:');
+  const url = window.prompt(t('notes.imageUrlPrompt'));
   if (url)
     editor.value.chain().focus().setImage({src: url}).run();
 };
@@ -408,6 +412,12 @@ const updateNote = async () => {
   const data = await noteStore.updateNote(title.value, content.value, idNote.value);
 
   updateContent(data);
+};
+
+const goBackToNotes = async () => {
+  await updateNote();
+  hasSavedBeforeLeaving.value = true;
+  await router.push({name: 'Notes'});
 };
 
 const updateContent = (data: ResponseAPI<Note>) => {
@@ -440,7 +450,9 @@ onMounted(async () => {
 
 onUnmounted(async () => {
   if (debounceTimeout) clearTimeout(debounceTimeout);
-  await noteStore.updateNote(title.value, content.value, idNote.value);
+
+  if (!hasSavedBeforeLeaving.value)
+    await noteStore.updateNote(title.value, content.value, idNote.value);
 })
 
 watch(

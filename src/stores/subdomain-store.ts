@@ -10,6 +10,8 @@ const SELECTED_SUBDOMAIN_STORAGE_KEY = 'selectedSubdomain';
 
 type SubdomainResponsePayload = Subdomain[] | Subdomain | string | null;
 
+let pendingFetchSubdomains: Promise<ResponseAPI<Subdomain[] | string>> | null = null;
+
 const normalizeSubdomainsResponse = (payload: SubdomainResponsePayload): Subdomain[] | string => {
     if (Array.isArray(payload) || typeof payload === 'string')
         return payload;
@@ -58,30 +60,38 @@ export const useSubdomainStore = defineStore('subdomain-store', {
             if (this.hasLoaded && !force)
                 return new ResponseAPI(200, this.subdomains);
 
+            if (pendingFetchSubdomains)
+                return pendingFetchSubdomains;
+
             this.isLoading = true;
 
-            try {
-                const {data} = await axios.get<ResponseAPI<SubdomainResponsePayload>>(
-                    `${this.url}/subdomains/by-user`,
-                    {headers: this.authorizationHeader()},
-                );
-                const payload = normalizeSubdomainsResponse(data.data);
+            pendingFetchSubdomains = (async () => {
+                try {
+                    const {data} = await axios.get<ResponseAPI<SubdomainResponsePayload>>(
+                        `${this.url}/subdomains/by-user`,
+                        {headers: this.authorizationHeader()},
+                    );
+                    const payload = normalizeSubdomainsResponse(data.data);
 
-                if (Array.isArray(payload)) {
-                    this.subdomains = payload;
-                    this.hasLoaded = true;
-                    this.ensureSelectedSubdomain();
+                    if (Array.isArray(payload)) {
+                        this.subdomains = payload;
+                        this.hasLoaded = true;
+                        this.ensureSelectedSubdomain();
+                    }
+
+                    return new ResponseAPI(data.httpStatusCode, payload);
+                } catch (error) {
+                    return new ResponseAPI(
+                        getApiErrorStatus(error),
+                        getApiErrorMessage(error, translate('subdomain.loadError')),
+                    );
+                } finally {
+                    this.isLoading = false;
+                    pendingFetchSubdomains = null;
                 }
+            })();
 
-                return new ResponseAPI(data.httpStatusCode, payload);
-            } catch (error) {
-                return new ResponseAPI(
-                    getApiErrorStatus(error),
-                    getApiErrorMessage(error, translate('subdomain.loadError')),
-                );
-            } finally {
-                this.isLoading = false;
-            }
+            return pendingFetchSubdomains;
         },
         async registerSubdomain(subdomain: RegisterSubdomain): Promise<ResponseAPI<string>> {
             try {

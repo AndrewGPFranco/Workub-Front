@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it} from 'vitest';
 import {mount} from '@vue/test-utils';
-import LanguageSelect from '@/components/LanguageSelect.vue';
-import {initializeLanguage, translate} from '@/composables/use-language.ts';
+import LanguageSelect from '../../components/LanguageSelect.vue';
+import {initializeLanguage, translate} from '../../composables/use-language.ts';
 
 describe('LanguageSelect', () => {
     beforeEach(() => {

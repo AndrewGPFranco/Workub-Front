@@ -2,7 +2,7 @@ import axios from 'axios';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {createPinia, setActivePinia} from 'pinia';
 import {useDemandStore} from '@/stores/demand-store.ts';
-import type {Demand, DemandStatus} from '@/types/demands/Demand.ts';
+import type {Demand, DemandStatus} from '../../types/demands/Demand.ts';
 
 vi.mock('axios');
 

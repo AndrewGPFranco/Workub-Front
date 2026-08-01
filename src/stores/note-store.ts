@@ -20,8 +20,13 @@ export const useNoteStore = defineStore('note-store', {
             };
         },
         async getNotes(): Promise<ResponseAPI<Note[]>> {
+            let url = `${this.url}/api/v1/notes/`;
+
+            if (this.selectedSubdomainId() !== null)
+                url = `${this.url}/api/v1/notes/subdomain/${this.selectedSubdomainId()}`;
+
             try {
-                const {data} = await axios.get<ResponseAPI<Note[]>>(`${this.url}/api/v1/notes/${this.selectedSubdomainId()}`, {
+                const {data} = await axios.get<ResponseAPI<Note[]>>(url, {
                     headers: this.authorizationHeader(),
                 })
 
@@ -32,12 +37,15 @@ export const useNoteStore = defineStore('note-store', {
             }
         },
         async getNoteByID(idNote: string): Promise<ResponseAPI<Note>> {
+            let url = `${this.url}/api/v1/notes/${idNote}`;
+
+            if (this.selectedSubdomainId() !== null)
+                url = `${this.url}/api/v1/notes/subdomain/${this.selectedSubdomainId()}/${idNote}`;
+
             try {
-                const {data} = await axios.get<ResponseAPI<Note>>(
-                    `${this.url}/api/v1/notes/${this.selectedSubdomainId()}/${idNote}`,
-                    {
-                        headers: this.authorizationHeader(),
-                    })
+                const {data} = await axios.get<ResponseAPI<Note>>(url, {
+                    headers: this.authorizationHeader(),
+                })
 
                 return new ResponseAPI(data.httpStatusCode, data.data);
             } catch (error) {
@@ -65,6 +73,18 @@ export const useNoteStore = defineStore('note-store', {
                 console.error(error);
                 throw new ResponseAPI(400, error);
             }
-        }
+        },
+        async deleteNote(idNote: string): Promise<ResponseAPI<string>> {
+            try {
+                const {data} = await axios.delete<ResponseAPI<string>>(`${this.url}/api/v1/notes/delete/${idNote}`, {
+                    headers: this.authorizationHeader(),
+                })
+
+                return new ResponseAPI(data.httpStatusCode, data.data);
+            } catch (error) {
+                console.error(error);
+                throw new ResponseAPI(400, error);
+            }
+        },
     }
 });

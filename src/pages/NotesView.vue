@@ -17,28 +17,39 @@
       </header>
 
       <section v-if="notes.length" class="notes-grid">
-        <router-link
+        <article
             v-for="note in notes"
             :key="note.id"
-            :to="{path: `/notes/new/${note.id}`}"
             class="note-card"
         >
-          <div class="note-card-header">
-            <h2 class="note-card-title">{{ note.title || 'Sem título' }}</h2>
-            <span v-if="note.isPinned" class="note-pin-icon" title="Fixada" aria-label="Nota fixada">
-              <i class="pi pi-bookmark-fill"/>
-            </span>
-          </div>
+          <button
+              type="button"
+              class="btn-delete-note"
+              aria-label="Excluir anotação"
+              title="Excluir anotação"
+              @click="deleteNote(note)"
+          >
+            <i class="pi pi-trash"/>
+          </button>
 
-          <p class="note-card-preview" v-html="stripHtml(note.content)"/>
+          <router-link :to="{path: `/notes/new/${note.id}`}" class="note-card-link">
+            <div class="note-card-header">
+              <h2 class="note-card-title">{{ note.title || 'Sem título' }}</h2>
+              <span v-if="note.isPinned" class="note-pin-icon" title="Fixada" aria-label="Nota fixada">
+                <i class="pi pi-bookmark-fill"/>
+              </span>
+            </div>
 
-          <footer class="note-card-footer">
-            <time class="note-card-date">
-              <i class="pi pi-clock"/>
-              {{ formatDate(note.updatedAt) }}
-            </time>
-          </footer>
-        </router-link>
+            <p class="note-card-preview" v-html="stripHtml(note.content)"/>
+
+            <footer class="note-card-footer">
+              <time class="note-card-date">
+                <i class="pi pi-clock"/>
+                {{ formatDate(note.updatedAt) }}
+              </time>
+            </footer>
+          </router-link>
+        </article>
       </section>
 
       <section v-else class="notes-empty">
@@ -57,14 +68,17 @@
 </template>
 
 <script setup lang="ts">
+import {useToast} from "primevue/usetoast";
 import type {Note} from "@/types/notes/Note.ts";
 import {useNoteStore} from "@/stores/note-store.ts";
 import {computed, onMounted, ref, watch} from "vue";
 import AppSidebar from "@/components/AppSidebar.vue";
 import {useLanguage} from "@/composables/use-language.ts";
 import {useSubdomainStore} from "@/stores/subdomain-store.ts";
+import {showErrorToast, showSuccessToast} from "@/utils/toast.ts";
 import {hasStoredPlanResource} from "@/composables/use-plan-resources.ts";
 
+const toast = useToast();
 const notes = ref<Note[]>([]);
 const noteStore = useNoteStore();
 const subdomainStore = useSubdomainStore();
@@ -96,16 +110,32 @@ const formatDate = (date: Date): string => {
   return d.toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'});
 };
 
-onMounted(async () => {
+const deleteNote = async (note: Note): Promise<void> => {
+  const response = await noteStore.deleteNote(note.id);
+
+  if (!response.isError) {
+    showSuccessToast(toast, response.response)
+
+    await fetchSubdomains();
+    return;
+  }
+
+  showErrorToast(toast, "Ocorreu um erro ao deletar anotação, tente novamente!");
+}
+
+async function fetchSubdomains() {
+  notes.value = [];
   if (canAccessSubdomains)
     await subdomainStore.fetchSubdomains();
 
-  if (subdomainStore.getSubdomains.length) {
-    const response = await noteStore.getNotes();
+  const response = await noteStore.getNotes();
 
-    if (response.httpStatusCode === 200)
-      notes.value = response.data;
-  }
+  if (response.httpStatusCode === 200)
+    notes.value = response.data;
+}
+
+onMounted(async () => {
+  await fetchSubdomains();
 })
 
 watch(
@@ -123,7 +153,6 @@ watch(
 </script>
 
 <style scoped>
-/* ── Page Layout ── */
 .notes-page {
   display: flex;
   flex-direction: column;
@@ -145,7 +174,6 @@ watch(
   overflow-y: auto;
 }
 
-/* ── Header ── */
 .notes-header {
   display: flex;
   align-items: center;
@@ -220,14 +248,12 @@ watch(
   transform: translateY(0);
 }
 
-/* ── Notes Grid ── */
 .notes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
   gap: 18px;
 }
 
-/* ── Note Card ── */
 .note-card {
   display: flex;
   flex-direction: column;
@@ -236,12 +262,49 @@ watch(
   border-radius: var(--wh-radius-lg);
   background: var(--wh-surface);
   border: 1px solid var(--wh-border);
-  text-decoration: none;
   color: inherit;
   transition: all 200ms ease;
-  cursor: pointer;
   min-height: 172px;
   box-shadow: 0 1px 0 color-mix(in srgb, var(--wh-text) 3%, transparent);
+}
+
+.note-card-link {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-delete-note {
+  position: absolute;
+  z-index: 1;
+  right: 16px;
+  bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wh-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 200ms ease;
+}
+
+.note-card:hover .btn-delete-note,
+.btn-delete-note:focus-visible {
+  opacity: 1;
+}
+
+.btn-delete-note:hover {
+  background: color-mix(in srgb, #dc2626 12%, transparent);
+  color: #dc2626;
 }
 
 .note-card:hover {
@@ -317,7 +380,6 @@ watch(
   font-size: 0.7rem;
 }
 
-/* ── Empty State ── */
 .notes-empty {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,7 @@
 import axios from "axios";
 import {defineStore} from "pinia";
 import ResponseAPI from "@/utils/ResponseAPI.ts";
+import {getApiErrorStatus} from "@/utils/api-error.ts";
 import type {Note, UpdateNote} from "@/types/notes/Note.ts";
 import {useSubdomainStore} from "@/stores/subdomain-store.ts";
 import type {PageResponse} from "@/types/http/PageResponse.ts";
@@ -34,7 +35,7 @@ export const useNoteStore = defineStore('note-store', {
                 return new ResponseAPI(data.httpStatusCode, data.data);
             } catch (error) {
                 console.error(error);
-                throw new ResponseAPI(400, error);
+                return new ResponseAPI(getApiErrorStatus(error), {} as PageResponse<Note>);
             }
         },
         async getNoteByID(idNote: string): Promise<ResponseAPI<Note>> {
@@ -51,17 +52,17 @@ export const useNoteStore = defineStore('note-store', {
                 return new ResponseAPI(data.httpStatusCode, data.data);
             } catch (error) {
                 console.error(error);
-                throw new ResponseAPI(400, error);
+                return new ResponseAPI(getApiErrorStatus(error), {} as Note);
             }
         },
-        async updateNote(title: string, content: string, idNote: string | undefined): Promise<ResponseAPI<Note>> {
+        async updateNote(title: string, content: string, idNote: string | undefined, idSubdomain?: string | null): Promise<ResponseAPI<Note>> {
             try {
-                const idSubdomain = this.selectedSubdomainId();
+                const noteSubdomainId = idSubdomain === undefined ? this.selectedSubdomainId() : idSubdomain;
 
                 const notePayload: UpdateNote = {
                     title: title,
                     content: content,
-                    idSubdomain: idSubdomain,
+                    idSubdomain: noteSubdomainId,
                     idNote: idNote || null
                 };
 
@@ -72,7 +73,7 @@ export const useNoteStore = defineStore('note-store', {
                 return new ResponseAPI(data.httpStatusCode, data.data);
             } catch (error) {
                 console.error(error);
-                throw new ResponseAPI(400, error);
+                return new ResponseAPI(getApiErrorStatus(error), {} as Note);
             }
         },
         async deleteNote(idNote: string): Promise<ResponseAPI<string>> {
@@ -84,7 +85,7 @@ export const useNoteStore = defineStore('note-store', {
                 return new ResponseAPI(data.httpStatusCode, data.data);
             } catch (error) {
                 console.error(error);
-                throw new ResponseAPI(400, error);
+                return new ResponseAPI(getApiErrorStatus(error), '');
             }
         },
     }

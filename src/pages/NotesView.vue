@@ -151,7 +151,10 @@ async function fetchNotes() {
 
   if (response.httpStatusCode === 200) {
     responsePagination.value = response.data;
+    return;
   }
+
+  showErrorToast(toast, t('notes.loadError'));
 }
 
 const onPageChange = async ({page}: { page: number }) => {

@@ -14,7 +14,7 @@
 
       <div class="note-create-layout">
         <section class="note-card">
-          <form class="note-form" @submit.prevent="updateNote">
+          <form class="note-form" @submit.prevent="() => updateNote()">
             <div class="field-group">
               <InputText id="note-title-input"
                          class="note-title-input" v-model="title" required autofocus fluid/>
@@ -333,17 +333,22 @@ import {
 import {useSubdomainStore} from "@/stores/subdomain-store.ts";
 import {hasStoredPlanResource} from "@/composables/use-plan-resources.ts";
 import {useLanguage} from "@/composables/use-language.ts";
+import {useToast} from "primevue/usetoast";
+import {showErrorToast} from "@/utils/toast.ts";
 
 const route = useRoute();
+const toast = useToast();
+const {t} = useLanguage();
 const router = useRouter();
 const title = ref<string>("");
 const content = ref<string>("");
 const idNote = ref<string | undefined>("");
 const hasSavedBeforeLeaving = ref(false);
+const noteSubdomainId = ref<string | null>(null);
 const canAccessSubdomains = hasStoredPlanResource('SUBDOMAINS');
-const {t} = useLanguage();
 
 let debounceTimeout: ReturnType<typeof setTimeout> | undefined;
+let savePromise: Promise<ResponseAPI<Note>> | null = null;
 
 const noteStore = useNoteStore();
 const subdomainStore = useSubdomainStore();
@@ -408,23 +413,46 @@ const addImage = () => {
     editor.value.chain().focus().setImage({src: url}).run();
 };
 
-const updateNote = async (): Promise<ResponseAPI<Note>> => {
+const hasDraftContent = () =>
+    Boolean(title.value.trim() || content.value.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim());
+
+const updateNote = async (updateRoute = true): Promise<ResponseAPI<Note>> => {
+  if (savePromise) {
+    await savePromise;
+    return updateNote(updateRoute);
+  }
+
   const isNewNote = !idNote.value;
-  const data = await noteStore.updateNote(title.value, content.value, idNote.value);
+  const request = noteStore.updateNote(title.value, content.value, idNote.value, noteSubdomainId.value);
+  savePromise = request;
 
-  updateContent(data);
+  try {
+    const data = await request;
 
-  if (!data.isError && isNewNote)
-    await router.replace({name: 'Note Create', params: {idNote: data.response.id}});
+    if (data.isError) {
+      showErrorToast(toast, t('notes.saveError'));
+      return data;
+    }
 
-  return data;
+    idNote.value = data.response.id;
+
+    if (isNewNote && updateRoute)
+      await router.replace({name: 'Note Create', params: {idNote: data.response.id}});
+
+    return data;
+  } finally {
+    if (savePromise === request)
+      savePromise = null;
+  }
 };
 
 const goBackToNotes = async () => {
-  const data = await updateNote();
+  if (hasDraftContent()) {
+    const data = await updateNote(false);
 
-  if (data.isError)
-    return;
+    if (data.isError)
+      return;
+  }
 
   hasSavedBeforeLeaving.value = true;
   await router.push({name: 'Notes'});
@@ -450,6 +478,8 @@ onMounted(async () => {
       await subdomainStore.fetchSubdomains();
   }
 
+  noteSubdomainId.value = subdomainStore.selectedSubdomainId;
+
   const param = route.params.idNote;
   idNote.value = Array.isArray(param) ? param[0] : (param || "");
 
@@ -459,11 +489,11 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(async () => {
+onUnmounted(() => {
   if (debounceTimeout) clearTimeout(debounceTimeout);
 
-  if (!hasSavedBeforeLeaving.value)
-    await noteStore.updateNote(title.value, content.value, idNote.value);
+  if (!hasSavedBeforeLeaving.value && hasDraftContent())
+    void updateNote(false);
 })
 
 watch(

@@ -24,6 +24,10 @@ vi.mock('@/stores/subdomain-store.ts', () => ({
     }),
 }));
 
+vi.mock('primevue/usetoast', () => ({
+    useToast: () => ({}),
+}));
+
 vi.mock('@/modules/tiptap', async () => {
     const {ref} = await import('vue');
     const extension = {configure: vi.fn(() => extension)};
@@ -90,8 +94,8 @@ describe('NoteCreateView', () => {
         await wrapper.get('form').trigger('submit');
         await flushPromises();
 
-        expect(mocks.updateNote).toHaveBeenNthCalledWith(1, '', '', '');
+        expect(mocks.updateNote).toHaveBeenNthCalledWith(1, '', '', '', null);
         expect(mocks.replace).toHaveBeenCalledWith({name: 'Note Create', params: {idNote: 'note-1'}});
-        expect(mocks.updateNote).toHaveBeenNthCalledWith(2, 'Title', '<p>Content</p>', 'note-1');
+        expect(mocks.updateNote).toHaveBeenNthCalledWith(2, '', '', 'note-1', null);
     });
 });

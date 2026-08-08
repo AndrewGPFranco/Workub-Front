@@ -29,7 +29,7 @@
       </div>
 
       <div class="navbar-actions">
-        <SubdomainSwitcher v-if="canAccess('SUBDOMAINS')"/>
+        <SubdomainSwitcher :subdomains="subdomains" v-if="canAccess('SUBDOMAINS') && subdomains.length"/>
         <LanguageSelect/>
         <ThemeToggle/>
         <span class="navbar-divider"/>
@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed} from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import {useRoute} from 'vue-router';
 import Button from 'primevue/button';
 import LanguageSelect from '@/components/LanguageSelect.vue';
@@ -59,10 +59,14 @@ import {
 } from '@/composables/use-plan-resources.ts';
 import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
+import {useSubdomainStore} from "@/stores/subdomain-store.ts";
+import type {Subdomain} from "@/types/subdomain/Subdomain.ts";
 
 const route = useRoute();
 const {t} = useLanguage();
 const authStore = useAuthStore();
+const subdomainStore = useSubdomainStore();
+const subdomains = ref<Subdomain[]>([] as Subdomain[]);
 const defaultRouteName = getDefaultAuthorizedRouteName();
 const canAccess = (resource: PlanResource) => hasStoredPlanResource(resource);
 const isDemandsRoute = computed(() => route.name === 'Demands' || route.name === 'Demand Create');
@@ -81,6 +85,11 @@ const logout = async () => {
   authStore.logout();
   await router.push({name: 'Login'});
 };
+
+onMounted(async () => {
+  const responseAPI = await subdomainStore.fetchSubdomains();
+  subdomains.value = responseAPI.response as Subdomain[];
+})
 </script>
 
 <style scoped>

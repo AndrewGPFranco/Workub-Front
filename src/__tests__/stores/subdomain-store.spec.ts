@@ -10,6 +10,7 @@ const mockedAxios = vi.mocked(axios);
 describe('subdomain store', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
+        localStorage.clear();
         vi.clearAllMocks();
     });
 
@@ -30,5 +31,19 @@ describe('subdomain store', () => {
         expect(mockedAxios.get).toHaveBeenCalledTimes(1);
         expect(firstResponse.response).toEqual(secondResponse.response);
         expect(store.getSubdomains).toHaveLength(1);
+    });
+
+    it('clears the selected subdomain when the session ends', () => {
+        const store = useSubdomainStore();
+        store.subdomains = [{id: 'subdomain-1', name: 'Engineering', urlPhoto: null}];
+        store.hasLoaded = true;
+        store.selectSubdomain('subdomain-1');
+
+        store.clearSubdomains();
+
+        expect(store.subdomains).toEqual([]);
+        expect(store.selectedSubdomainKey).toBeNull();
+        expect(store.hasLoaded).toBe(false);
+        expect(localStorage.getItem('selectedSubdomain')).toBeNull();
     });
 });

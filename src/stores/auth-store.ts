@@ -5,6 +5,7 @@ import {translate} from "@/composables/use-language.ts";
 import {getApiErrorMessage} from "@/utils/api-error.ts";
 import type {UserLogin} from "@/types/auth/UserLogin.ts";
 import type {UserLogged} from "@/types/auth/UserLogged.ts";
+import {useSubdomainStore} from "@/stores/subdomain-store.ts";
 import type {UserRegister} from "@/types/auth/UserRegister.ts";
 import type {AuthResponse} from "@/types/auth/AuthResponse.ts";
 
@@ -95,6 +96,7 @@ export const useAuthStore = defineStore('auth-store', {
         logout() {
             this.userLogged = null;
             clearStoredSession();
+            useSubdomainStore().clearSubdomains();
         },
         async register(user: UserRegister): Promise<ResponseAPI<string>> {
             try {

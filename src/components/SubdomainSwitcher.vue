@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted} from 'vue';
+import {computed} from 'vue';
 import Select from 'primevue/select';
 import {useLanguage} from '@/composables/use-language.ts';
 import {useSubdomainStore} from '@/stores/subdomain-store.ts';
@@ -44,6 +44,10 @@ interface SubdomainOption {
   label: string;
   urlPhoto: string | null;
 }
+
+const props = defineProps<{
+  subdomains: Subdomain[];
+}>();
 
 const {t} = useLanguage();
 const subdomainStore = useSubdomainStore();
@@ -63,10 +67,6 @@ const selectedSubdomainKey = computed({
 
 const selectedOption = (value: string | null | undefined) =>
     subdomainOptions.value.find((option) => option.value === value) ?? null;
-
-onMounted(() => {
-  subdomainStore.fetchSubdomains();
-});
 </script>
 
 <style scoped>

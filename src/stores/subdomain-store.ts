@@ -43,6 +43,13 @@ export const useSubdomainStore = defineStore('subdomain-store', {
             else
                 localStorage.removeItem(SELECTED_SUBDOMAIN_STORAGE_KEY);
         },
+        clearSubdomains() {
+            this.subdomains = [];
+            this.selectedSubdomainKey = null;
+            this.isLoading = false;
+            this.hasLoaded = false;
+            localStorage.removeItem(SELECTED_SUBDOMAIN_STORAGE_KEY);
+        },
         ensureSelectedSubdomain() {
             if (this.subdomains.length === 0) {
                 this.selectSubdomain(null);

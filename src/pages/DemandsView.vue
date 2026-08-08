@@ -68,7 +68,7 @@
         </dl>
       </section>
 
-      <section :class="['content-grid', {'editing-grid': editingDemandId}]">
+      <section class="content-grid">
         <section id="demands-list" class="list-board">
           <div class="section-heading list-heading">
             <div>
@@ -193,112 +193,6 @@
           </div>
         </section>
 
-        <aside v-if="editingDemandId" ref="formCard" class="intake">
-          <div class="intake-heading">
-            <p class="kicker">{{ t('demands.editKicker') }}</p>
-            <h2>{{ t('demands.edit') }}</h2>
-            <p>{{ t('demands.editDescription') }}</p>
-          </div>
-
-          <form class="demand-form" @submit.prevent="saveDemand">
-            <label>
-              <span>{{ t('demands.title') }}</span>
-              <InputText v-model="form.title" :placeholder="t('demands.titlePlaceholder')" required fluid/>
-            </label>
-
-            <label>
-              <span>{{ t('demands.description') }}</span>
-              <Textarea
-                  v-model="form.description"
-                  :placeholder="t('demands.descriptionPlaceholder')"
-                  rows="5"
-                  required
-                  fluid
-              />
-            </label>
-
-            <label>
-              <span>{{ t('demands.reviewNote') }} <small>{{ t('demands.optional') }}</small></span>
-              <Textarea
-                  v-model="form.observationToReview"
-                  :placeholder="t('demands.reviewNotePlaceholder')"
-                  rows="4"
-                  fluid
-              />
-            </label>
-
-            <fieldset class="observations-fieldset">
-              <legend>{{ t('demands.observations') }} <small>{{ t('demands.optional') }}</small></legend>
-              <div v-for="(_, index) in form.observations" :key="index" class="observation-input-row">
-                <Textarea
-                    v-model="form.observations[index]"
-                    :placeholder="t('demands.observationPlaceholder')"
-                    rows="3"
-                    fluid
-                />
-                <Button
-                    type="button"
-                    icon="pi pi-trash"
-                    text
-                    severity="danger"
-                    :aria-label="t('demands.removeObservation')"
-                    @click="removeEditObservation(index)"
-                />
-              </div>
-              <Button
-                  type="button"
-                  :label="t('demands.addObservation')"
-                  icon="pi pi-plus"
-                  text
-                  class="add-observation-button"
-                  @click="addEditObservation"
-              />
-            </fieldset>
-
-            <label>
-              <span>{{ t('demands.deadline') }}</span>
-              <InputText v-model="form.deadline" type="date" fluid/>
-            </label>
-
-            <label>
-              <span>{{ t('demands.finalizedAt') }} <small>{{ t('demands.optional') }}</small></span>
-              <InputText v-model="form.finalizedAt" type="date" fluid/>
-            </label>
-
-            <div class="form-row">
-              <label>
-                <span>{{ t('demands.status') }}</span>
-                <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" fluid/>
-              </label>
-              <label>
-                <span>{{ t('demands.priority') }}</span>
-                <Select
-                    v-model="form.priority"
-                    :options="priorityOptions"
-                    option-label="label"
-                    option-value="value"
-                    fluid
-                />
-              </label>
-            </div>
-
-            <Button
-                type="submit"
-                :label="t('demands.save')"
-                icon="pi pi-check"
-                :loading="isSubmitting"
-                :disabled="isSubmitting"
-                class="submit-button"
-            />
-            <Button
-                type="button"
-                :label="t('demands.cancelEdit')"
-                text
-                class="cancel-button"
-                @click="cancelEditing"
-            />
-          </form>
-        </aside>
       </section>
     </main>
 
@@ -315,6 +209,108 @@
     </footer>
 
     <Teleport to="body">
+      <Transition name="delete-modal">
+        <div
+            v-if="editingDemandId"
+            class="delete-modal-backdrop edit-modal-backdrop"
+            role="presentation"
+            @click.self="cancelEditing"
+        >
+          <section
+              ref="formCard"
+              class="delete-modal edit-demand-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-demand-modal-title"
+              aria-describedby="edit-demand-modal-description"
+              tabindex="-1"
+          >
+            <header class="delete-modal-header">
+              <div>
+                <p class="kicker">{{ t('demands.editKicker') }}</p>
+                <h2 id="edit-demand-modal-title">{{ t('demands.edit') }}</h2>
+                <p id="edit-demand-modal-description" class="edit-modal-description">
+                  {{ t('demands.editDescription') }}
+                </p>
+              </div>
+              <button
+                  class="delete-modal-close"
+                  type="button"
+                  :aria-label="t('demands.close')"
+                  :disabled="isSubmitting"
+                  @click="cancelEditing"
+              >
+                <i class="pi pi-times"/>
+              </button>
+            </header>
+
+            <form class="demand-form edit-modal-form" @submit.prevent="saveDemand">
+              <div class="edit-modal-content">
+                <label>
+                  <span>{{ t('demands.title') }}</span>
+                  <InputText v-model="form.title" :placeholder="t('demands.titlePlaceholder')" required fluid/>
+                </label>
+
+                <label>
+                  <span>{{ t('demands.description') }}</span>
+                  <Textarea v-model="form.description" :placeholder="t('demands.descriptionPlaceholder')"
+                            rows="5" required fluid/>
+                </label>
+
+                <label>
+                  <span>{{ t('demands.reviewNote') }} <small>{{ t('demands.optional') }}</small></span>
+                  <Textarea v-model="form.observationToReview" :placeholder="t('demands.reviewNotePlaceholder')"
+                            rows="4" fluid/>
+                </label>
+
+                <fieldset class="observations-fieldset">
+                  <legend>{{ t('demands.observations') }} <small>{{ t('demands.optional') }}</small></legend>
+                  <div v-for="(_, index) in form.observations" :key="index" class="observation-input-row">
+                    <Textarea v-model="form.observations[index]" :placeholder="t('demands.observationPlaceholder')"
+                              rows="3" fluid/>
+                    <Button type="button" icon="pi pi-trash" text severity="danger"
+                            :aria-label="t('demands.removeObservation')" @click="removeEditObservation(index)"/>
+                  </div>
+                  <Button type="button" :label="t('demands.addObservation')" icon="pi pi-plus" text
+                          class="add-observation-button" @click="addEditObservation"/>
+                </fieldset>
+
+                <div class="form-row edit-date-row">
+                  <label>
+                    <span>{{ t('demands.deadline') }}</span>
+                    <InputText v-model="form.deadline" type="date" fluid/>
+                  </label>
+                  <label>
+                    <span>{{ t('demands.finalizedAt') }} <small>{{ t('demands.optional') }}</small></span>
+                    <InputText v-model="form.finalizedAt" type="date" fluid/>
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>{{ t('demands.status') }}</span>
+                    <Select v-model="form.status" :options="statusOptions" option-label="label"
+                            option-value="value" fluid/>
+                  </label>
+                  <label>
+                    <span>{{ t('demands.priority') }}</span>
+                    <Select v-model="form.priority" :options="priorityOptions" option-label="label"
+                            option-value="value" fluid/>
+                  </label>
+                </div>
+              </div>
+
+              <footer class="delete-modal-footer edit-modal-footer">
+                <Button type="button" :label="t('demands.cancelEdit')" text class="cancel-button"
+                        :disabled="isSubmitting" @click="cancelEditing"/>
+                <Button type="submit" :label="t('demands.save')" icon="pi pi-check" :loading="isSubmitting"
+                        :disabled="isSubmitting" class="submit-button"/>
+              </footer>
+            </form>
+          </section>
+        </div>
+      </Transition>
+
       <Transition name="delete-modal">
         <div
             v-if="selectedDemand"
@@ -846,10 +842,10 @@ const saveDemand = async () => {
     return;
   }
 
+  isSubmitting.value = false;
   cancelEditing();
   showSuccessToast(toast, result.response);
   await loadDemands(0);
-  isSubmitting.value = false;
 };
 
 const toEditDemand = (): EditDemand => ({
@@ -869,7 +865,7 @@ const addEditObservation = () => form.observations.push('');
 
 const removeEditObservation = (index: number) => form.observations.splice(index, 1);
 
-const startEditing = (demand: Demand) => {
+const startEditing = async (demand: Demand) => {
   editingDemandId.value = demand.id;
   Object.assign(form, {
     title: demand.title,
@@ -881,10 +877,14 @@ const startEditing = (demand: Demand) => {
     observations: demand.observations.map((observation) => observation.textObservation),
     finalizedAt: toInputDate(demand.finalizedAt)
   });
+  await nextTick();
   focusForm();
 };
 
 const cancelEditing = () => {
+  if (isSubmitting.value)
+    return;
+
   editingDemandId.value = null;
   Object.assign(form, emptyForm());
 };
@@ -1027,6 +1027,7 @@ const deleteDemand = async () => {
 
 const closeDeleteDialogOnEscape = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
+    cancelEditing();
     closeDemandDetails();
     closeDeleteDialog();
     closeChangeSubdomainDialog();
@@ -1086,7 +1087,7 @@ const formatDateOnly = (date: string) =>
     new Intl.DateTimeFormat(language.value, {timeZone: 'UTC'}).format(new Date(`${date}T00:00:00Z`));
 
 const focusForm = () => {
-  formCard.value?.scrollIntoView({behavior: 'smooth', block: 'start'});
+  formCard.value?.focus();
 };
 
 const logout = async () => {
@@ -1149,39 +1150,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeDeleteDialogOnE
   scroll-margin-top: 16px;
   color: #17251f;
   background: #f1f0eb;
-}
-
-.site-header {
-  padding: 22px clamp(18px, 5vw, 76px) 0;
-  pointer-events: none;
-}
-
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 1360px;
-  min-height: 72px;
-  margin: 0 auto;
-  padding: 9px 12px;
-  border: 1px solid rgba(33, 59, 49, 0.08);
-  border-radius: 24px;
-  background: rgba(255, 255, 253, 0.93);
-  box-shadow: 0 15px 35px rgba(42, 55, 49, 0.1);
-  backdrop-filter: blur(16px);
-  pointer-events: auto;
-}
-
-.brand, .navbar-center, .navbar-actions, .profile-copy, .demand-meta, .pagination, .pagination div, .footer-brand {
-  display: flex;
-  align-items: center;
-}
-
-.brand {
-  gap: 10px;
-  color: #173e32;
-  font-weight: 800;
-  text-decoration: none;
 }
 
 .brand-logo {
@@ -1252,21 +1220,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeDeleteDialogOnE
   color: #66726b;
 }
 
-.navbar-divider {
-  width: 1px;
-  height: 28px;
-  margin: 0 7px;
-  background: #e4e5df;
-}
-
-.profile-copy {
-  align-items: flex-end;
-  flex-direction: column;
-  max-width: 170px;
-  font-size: 0.76rem;
-  line-height: 1.25;
-}
-
 .profile-copy span {
   overflow: hidden;
   max-width: 100%;
@@ -1274,18 +1227,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeDeleteDialogOnE
   font-size: 0.67rem;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.avatar {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-  border-radius: 13px;
-  color: #ffffff;
-  background: #ef774c;
-  font-size: 0.72rem;
-  font-weight: 900;
 }
 
 .workspace {
@@ -1424,11 +1365,7 @@ h1 em {
   align-items: start;
 }
 
-.content-grid.editing-grid {
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 355px);
-}
-
-.list-board, .intake {
+.list-board {
   border: 1px solid #dcddd8;
   border-radius: 4px;
   overflow: hidden;
@@ -1610,11 +1547,13 @@ h2 {
 
 .kanban-card-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 8px;
   flex: 1 1 auto;
   max-height: min(68vh, 720px);
   min-height: 180px;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 8px;
   scrollbar-color: var(--wh-border-strong) transparent;
@@ -1638,6 +1577,7 @@ h2 {
 }
 
 .kanban-card {
+  min-width: 0;
   padding: 12px;
   border: 1px solid var(--wh-border-strong);
   border-radius: 8px;
@@ -1731,43 +1671,6 @@ h2 {
 .kanban-card-footer .is-overdue {
   color: #cf222e;
   font-weight: 750;
-}
-
-.demand-list {
-  display: grid;
-}
-
-.demand-item {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
-  gap: 14px;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e2e3df;
-  outline: 0;
-  cursor: pointer;
-  transition: background 160ms ease;
-}
-
-.demand-item:hover, .demand-item:focus-visible {
-  background: #fbfcf6;
-}
-
-.demand-item:focus-visible {
-  box-shadow: inset 3px 0 #6e63d9;
-}
-
-.demand-index {
-  color: #b7bdb7;
-  font-family: Georgia, serif;
-  font-size: 0.92rem;
-}
-
-.demand-main {
-  min-width: 0;
-}
-
-.demand-title-row {
-  justify-content: flex-start;
 }
 
 .demand-item h3 {
@@ -1901,33 +1804,6 @@ h2 {
 
 .pagination :deep(.p-button) {
   color: #42685d;
-}
-
-.intake {
-  position: sticky;
-  top: 116px;
-  padding: 22px;
-  background: var(--panel-strong-bg);
-}
-
-.intake-heading {
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--panel-strong-border);
-}
-
-.intake-heading h2 {
-  margin-top: 5px;
-  color: var(--panel-strong-heading);
-}
-
-.intake-heading .kicker {
-  color: var(--panel-accent);
-}
-
-.intake-heading p:last-child {
-  margin-top: 8px;
-  color: var(--panel-strong-text);
-  font-size: 0.78rem;
 }
 
 .demand-form {
@@ -2087,6 +1963,61 @@ h2 {
 
 .details-modal {
   width: min(100%, 680px);
+}
+
+.edit-modal-backdrop {
+  padding-top: min(6vh, 48px);
+}
+
+.edit-demand-modal {
+  --panel-strong-bg: #fbfbf7;
+  --panel-strong-bg-hover: #f4f4ee;
+  --panel-strong-field: #ffffff;
+  --panel-strong-border: #d9dcd6;
+  --panel-strong-heading: #26332f;
+  --panel-strong-text: #65716c;
+  --panel-strong-muted: #919a96;
+  --panel-accent: #6e63d9;
+  --panel-accent-hover: #5e53ca;
+  --panel-accent-contrast: #ffffff;
+  display: flex;
+  width: min(100%, 760px);
+  max-height: calc(100dvh - min(12vh, 96px));
+  flex-direction: column;
+}
+
+.edit-demand-modal .delete-modal-header {
+  flex: 0 0 auto;
+}
+
+.edit-modal-description {
+  margin-top: 7px;
+  color: var(--panel-strong-text);
+  font-size: 0.78rem;
+}
+
+.edit-modal-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 0;
+  margin-top: 0;
+  overflow: hidden;
+}
+
+.edit-modal-content {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+  padding: 20px 22px;
+  overflow-y: auto;
+}
+
+.edit-modal-footer {
+  flex: 0 0 auto;
+}
+
+.edit-modal-footer .submit-button {
+  margin-top: 0;
 }
 
 .details-modal-content {
@@ -2426,8 +2357,7 @@ h2 {
   border-color: rgba(214, 220, 244, 0.16);
 }
 
-:global(.app-dark .list-board),
-:global(.app-dark .intake) {
+:global(.app-dark .list-board) {
   border-color: rgba(214, 220, 244, 0.14);
   background: rgba(20, 27, 42, 0.88);
   box-shadow: 0 15px 32px rgba(0, 0, 0, 0.14);
@@ -2459,6 +2389,19 @@ h2 {
   border-color: rgba(214, 220, 244, 0.16);
   background: #171b2b;
   box-shadow: 0 24px 55px rgba(0, 0, 0, 0.32);
+}
+
+:global(.app-dark .edit-demand-modal) {
+  --panel-strong-bg: #171b2b;
+  --panel-strong-bg-hover: #111624;
+  --panel-strong-field: #101522;
+  --panel-strong-border: rgba(214, 220, 244, 0.16);
+  --panel-strong-heading: #f7f5ef;
+  --panel-strong-text: #c5ccdf;
+  --panel-strong-muted: #8993ad;
+  --panel-accent: #8876ff;
+  --panel-accent-hover: #9d8dff;
+  --panel-accent-contrast: #ffffff;
 }
 
 :global(.app-dark .delete-modal-header),
@@ -2526,10 +2469,6 @@ h2 {
 @media (max-width: 980px) {
   .content-grid {
     grid-template-columns: 1fr;
-  }
-
-  .intake {
-    position: static;
   }
 }
 
@@ -2660,6 +2599,30 @@ h2 {
 
   .details-meta {
     grid-template-columns: 1fr;
+  }
+
+  .edit-modal-backdrop {
+    padding: 12px;
+  }
+
+  .edit-demand-modal {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .edit-demand-modal .delete-modal-header,
+  .edit-modal-content,
+  .edit-modal-footer {
+    padding-inline: 16px;
+  }
+
+  .edit-modal-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .edit-modal-footer :deep(.p-button) {
+    justify-content: center;
+    width: 100%;
   }
 
   .details-modal .delete-modal-footer {

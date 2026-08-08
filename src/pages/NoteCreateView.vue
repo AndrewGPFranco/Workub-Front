@@ -328,7 +328,8 @@ import type ResponseAPI from "@/utils/ResponseAPI.ts";
 import type {Note} from "@/types/notes/Note.ts";
 import {
   EditorContent, useEditor, StarterKit, TaskList, TaskItem, Image, Table,
-  TableRow, TableHeader, TableCell, Highlight, Subscript, Superscript, TextAlign
+  TableRow, TableHeader, TableCell, Highlight, Subscript, Superscript, TextAlign,
+  createCopyableCodeBlock
 } from "@/modules/tiptap";
 import {useSubdomainStore} from "@/stores/subdomain-store.ts";
 import {hasStoredPlanResource} from "@/composables/use-plan-resources.ts";
@@ -357,10 +358,16 @@ const editor = useEditor({
   content: content.value,
   extensions: [
     StarterKit.configure({
+      codeBlock: false,
       link: {
-        openOnClick: false,
+        markdownLinks: true,
+        openOnClick: true,
         HTMLAttributes: {rel: 'noopener noreferrer', target: '_blank'}
       }
+    }),
+    createCopyableCodeBlock({
+      copy: t('notes.codeBlock.copy'),
+      copied: t('notes.codeBlock.copied'),
     }),
     TaskList,
     TaskItem.configure({nested: true}),
@@ -390,20 +397,51 @@ const focusEditor = () => {
     editor.value.chain().focus().run();
 };
 
+const normalizeLinkHref = (url: string) => /^(?:[a-z][a-z\d+.-]*:|[/#])/i.test(url) ? url : `https://${url}`;
+
 const setLink = () => {
   if (!editor.value)
     return;
 
   const previousUrl = editor.value.getAttributes('link').href;
+  const isNewLinkWithoutSelection = editor.value.state.selection.empty && !previousUrl;
+  let linkText = '';
+
+  if (isNewLinkWithoutSelection) {
+    const text = window.prompt(t('notes.linkTextPrompt'));
+
+    if (text === null || text.trim() === '')
+      return;
+
+    linkText = text.trim();
+  }
+
   const url = window.prompt(t('notes.linkUrlPrompt'), previousUrl);
 
   if (url === null)
     return;
-  if (url === '') {
+  const trimmedUrl = url.trim();
+
+  if (trimmedUrl === '') {
     editor.value.chain().focus().extendMarkRange('link').unsetLink().run();
     return;
   }
-  editor.value.chain().focus().extendMarkRange('link').setLink({href: url}).run();
+
+  const href = normalizeLinkHref(trimmedUrl);
+
+  if (!editor.value.can().setLink({href}))
+    return;
+
+  if (isNewLinkWithoutSelection) {
+    editor.value.chain().focus().insertContent({
+      type: 'text',
+      text: linkText,
+      marks: [{type: 'link', attrs: {href}}],
+    }).run();
+    return;
+  }
+
+  editor.value.chain().focus().extendMarkRange('link').setLink({href}).run();
 };
 
 const addImage = () => {
@@ -712,8 +750,7 @@ watch(
 }
 
 :deep(.ProseMirror) {
-  display: flex;
-  flex-direction: column;
+  display: block;
   flex: 1;
   width: 100%;
   min-height: 100%;
@@ -868,8 +905,9 @@ watch(
 }
 
 :deep(.ProseMirror pre) {
+  position: relative;
   margin: 0.8em 0;
-  padding: 12px 16px;
+  padding: 12px 88px 12px 16px;
   border: 1px solid var(--wh-border);
   border-radius: var(--wh-radius-sm);
   background: var(--wh-bg-subtle);
@@ -877,9 +915,42 @@ watch(
 }
 
 :deep(.ProseMirror pre code) {
+  display: block;
   padding: 0;
   color: inherit;
   background: none;
+}
+
+:deep(.ProseMirror .code-copy-button) {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 3px 8px;
+  border: 1px solid var(--wh-border);
+  border-radius: var(--wh-radius-sm);
+  color: var(--wh-text-soft);
+  background: var(--wh-surface);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+:deep(.ProseMirror .code-copy-button:hover) {
+  color: var(--wh-primary);
+  border-color: var(--wh-primary);
+  background: var(--wh-primary-soft);
+}
+
+:deep(.ProseMirror .code-copy-button:focus-visible) {
+  outline: 2px solid var(--wh-primary);
+  outline-offset: 2px;
 }
 
 :deep(.ProseMirror hr) {

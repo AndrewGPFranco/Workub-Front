@@ -13,3 +13,4 @@ export { Underline } from "@tiptap/extension-underline";
 export { Subscript } from "@tiptap/extension-subscript";
 export { Superscript } from "@tiptap/extension-superscript";
 export { TextAlign } from "@tiptap/extension-text-align";
+export { createCopyableCodeBlock } from "./copyable-code-block";

@@ -2,6 +2,12 @@ export type DemandStatus = 'DONE' | 'PENDING' | 'BLOCKED' | 'ONGOING';
 
 export type DemandPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
+export enum Sprint {
+    CURRENT = 'CURRENT',
+    PAST = 'PAST',
+    FUTURE = 'FUTURE',
+}
+
 export interface RegisterObservation {
     textObservation: string;
 }
@@ -30,6 +36,7 @@ export interface Demand {
     updatedAt: string | null;
     finalizedAt: Date | null;
     subdomainId?: string | null;
+    sprint: Sprint;
 }
 
 export interface EditDemand {
@@ -42,6 +49,7 @@ export interface EditDemand {
     finalizedAt: Date | null;
     subdomainId?: string | null;
     observations: RegisterObservations;
+    sprint: Sprint;
 }
 
 export interface RegisterDemand {
@@ -53,4 +61,5 @@ export interface RegisterDemand {
     observationToReview: string | null;
     subdomainId?: string | null;
     observations: RegisterObservations;
+    sprint: Sprint;
 }

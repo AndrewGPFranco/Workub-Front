@@ -297,6 +297,11 @@
                     <Select v-model="form.priority" :options="priorityOptions" option-label="label"
                             option-value="value" fluid/>
                   </label>
+                  <label>
+                    <span>{{ t('demands.sprint') }}</span>
+                    <Select v-model="form.sprint" :options="sprintOptions" option-label="label"
+                            option-value="value" fluid/>
+                  </label>
                 </div>
               </div>
 
@@ -344,6 +349,9 @@
                 </span>
                 <span :class="['priority-mark', `priority-${selectedDemand.priority.toLowerCase()}`]">
                   {{ priorityLabels[selectedDemand.priority] }}
+                </span>
+                <span :class="['priority-mark', `sprint-${selectedDemand.sprint.toLowerCase()}`]">
+                  {{ sprintLabels[selectedDemand.sprint] }}
                 </span>
               </div>
 
@@ -584,11 +592,13 @@ import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
 import {useDemandStore} from '@/stores/demand-store.ts';
 import {useSubdomainStore} from '@/stores/subdomain-store.ts';
+import {hasStoredPlanResource, type PlanResource} from '@/composables/use-plan-resources.ts';
 import {
-  hasStoredPlanResource,
-  type PlanResource
-} from '@/composables/use-plan-resources.ts';
-import type {Demand, DemandPriority, DemandStatus, EditDemand} from '@/types/demands/Demand.ts';
+  type Demand,
+  type DemandPriority,
+  type DemandStatus,
+  type EditDemand, Sprint
+} from '@/types/demands/Demand.ts';
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 
 type DemandForm = {
@@ -600,6 +610,7 @@ type DemandForm = {
   observationToReview: string | null;
   observations: string[];
   finalizedAt: string | null;
+  sprint: Sprint;
 };
 
 const toast = useToast();
@@ -646,7 +657,14 @@ const priorityLabels = computed<Record<DemandPriority, string>>(() => ({
   URGENT: t('priority.URGENT'),
 }));
 
+const sprintLabels = computed<Record<Sprint, string>>(() => ({
+  PAST: t('demands.sprint.PAST'),
+  CURRENT: t('demands.sprint.CURRENT'),
+  FUTURE: t('demands.sprint.FUTURE'),
+}));
+
 const statusOptions = computed(() => Object.entries(statusLabels.value).map(([value, label]) => ({value, label})));
+const sprintOptions = computed(() => Object.entries(sprintLabels.value).map(([value, label]) => ({value, label})));
 const priorityOptions = computed(() => Object.entries(priorityLabels.value).map(([value, label]) => ({value, label})));
 const priorityFilterOptions = computed(() => [
   {value: 'ALL', label: t('demands.allPriorities')},
@@ -672,7 +690,8 @@ const emptyForm = (): DemandForm => ({
   priority: 'MEDIUM',
   observationToReview: null,
   observations: [],
-  finalizedAt: null
+  finalizedAt: null,
+  sprint: Sprint.CURRENT
 });
 
 const form = reactive<DemandForm>(emptyForm());
@@ -794,6 +813,7 @@ const demandToEditPayload = (demand: Demand, status: DemandStatus): EditDemand =
   priority: demand.priority,
   observationsToReview: demand.observationsToReview ?? null,
   finalizedAt: demand.finalizedAt,
+  sprint: demand.sprint,
   observations: {
     textObservations: demand.observations.map((observation) => observation.textObservation),
   },
@@ -856,6 +876,7 @@ const toEditDemand = (): EditDemand => ({
   priority: form.priority,
   observationsToReview: form.observationToReview?.trim() || null,
   finalizedAt: parseInputDate(form.finalizedAt),
+  sprint: form.sprint,
   observations: {
     textObservations: form.observations.map((observation) => observation.trim()).filter(Boolean),
   },
@@ -875,7 +896,8 @@ const startEditing = async (demand: Demand) => {
     priority: demand.priority,
     observationToReview: demand.observationsToReview ?? null,
     observations: demand.observations.map((observation) => observation.textObservation),
-    finalizedAt: toInputDate(demand.finalizedAt)
+    finalizedAt: toInputDate(demand.finalizedAt),
+    sprint: demand.sprint,
   });
   await nextTick();
   focusForm();
@@ -1787,6 +1809,18 @@ h2 {
   color: #66813c;
 }
 
+.sprint-past {
+  color: #7f8b86;
+}
+
+.sprint-current {
+  color: #377b67;
+}
+
+.sprint-future {
+  color: #43adff;
+}
+
 .pagination {
   justify-content: space-between;
   padding: 11px 18px;
@@ -1859,7 +1893,7 @@ h2 {
 
 .form-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 

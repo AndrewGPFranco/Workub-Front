@@ -2,7 +2,7 @@ import axios from 'axios';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {createPinia, setActivePinia} from 'pinia';
 import {useDemandStore} from '@/stores/demand-store.ts';
-import type {Demand, DemandStatus} from '../../types/demands/Demand.ts';
+import {Sprint, type Demand, type DemandStatus} from '../../types/demands/Demand.ts';
 
 vi.mock('axios');
 
@@ -19,6 +19,7 @@ const demandForStatus = (status: DemandStatus, index: number): Demand => ({
     observationsToReview: null,
     observations: [],
     finalizedAt: null,
+    sprint: Sprint.CURRENT,
 });
 const pageResponse = {
     data: {
@@ -83,6 +84,21 @@ describe('demand store', () => {
         );
     });
 
+    it('sends priority and sprint together when both filters are selected', async () => {
+        const store = useDemandStore();
+        store.priorityFilter = 'URGENT';
+        store.sprintFilter = Sprint.CURRENT;
+
+        await store.fetchDemands();
+
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+            `${store.url}/demands/by-user`,
+            expect.objectContaining({
+                params: {page: 0, priority: 'URGENT', sprint: 'CURRENT'},
+            }),
+        );
+    });
+
     it('updates the board demand list when loading one page per status', async () => {
         const store = useDemandStore();
         const pages = (['PENDING', 'ONGOING', 'BLOCKED', 'DONE'] as const).map((status, statusIndex) => ({
@@ -123,6 +139,7 @@ describe('demand store', () => {
             canGoForward: true,
             isLoading: false,
         };
+        store.sprintFilter = Sprint.PAST;
         mockedAxios.get.mockResolvedValueOnce({
             data: {
                 httpStatusCode: 200,
@@ -142,7 +159,7 @@ describe('demand store', () => {
         expect(mockedAxios.get).toHaveBeenCalledWith(
             `${store.url}/demands/by-user`,
             expect.objectContaining({
-                params: {page: 1, status: 'ONGOING'},
+                params: {page: 1, status: 'ONGOING', sprint: 'PAST'},
             }),
         );
         expect(result.response).toEqual([secondPageDemand]);

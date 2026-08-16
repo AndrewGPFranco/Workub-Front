@@ -12,6 +12,7 @@ import type {
     EditDemand,
     InputObservation,
     RegisterDemand,
+    Sprint,
 } from '@/types/demands/Demand.ts';
 
 const TOKEN_STORAGE_KEY = 'token';
@@ -71,6 +72,7 @@ export const useDemandStore = defineStore('demand-store', {
         statusFilter: null as DemandStatus | null,
         priorityFilter: null as DemandPriority | null,
         statusPages: emptyStatusPages(),
+        sprintFilter: null as Sprint | null,
     }),
     actions: {
         authorizationHeader() {
@@ -139,6 +141,7 @@ export const useDemandStore = defineStore('demand-store', {
                             page,
                             ...(this.statusFilter ? {status: this.statusFilter} : {}),
                             ...(this.priorityFilter ? {priority: this.priorityFilter} : {}),
+                            ...(this.sprintFilter ? {sprint: this.sprintFilter} : {}),
                             ...(subdomainId ? {subdomainId} : {}),
                         },
                         headers: this.authorizationHeader(),
@@ -177,6 +180,7 @@ export const useDemandStore = defineStore('demand-store', {
                             page,
                             status,
                             ...(this.priorityFilter ? {priority: this.priorityFilter} : {}),
+                            ...(this.sprintFilter ? {sprint: this.sprintFilter} : {}),
                             ...(subdomainId ? {subdomainId} : {}),
                         },
                         headers: this.authorizationHeader(),

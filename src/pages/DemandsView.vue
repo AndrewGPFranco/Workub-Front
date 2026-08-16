@@ -77,6 +77,16 @@
             </div>
             <div class="list-heading-actions">
               <Select
+                  v-model="selectedSprintFilter"
+                  :options="sprintFilterOptions"
+                  option-label="label"
+                  option-value="value"
+                  :placeholder="t('demands.filterBySprint')"
+                  :aria-label="t('demands.filterBySprint')"
+                  class="status-filter"
+                  @change="applyFilters"
+              />
+              <Select
                   v-model="selectedPriorityFilter"
                   :options="priorityFilterOptions"
                   option-label="label"
@@ -670,7 +680,14 @@ const priorityFilterOptions = computed(() => [
   {value: 'ALL', label: t('demands.allPriorities')},
   ...priorityOptions.value,
 ]);
+
+const sprintFilterOptions = computed(() => [
+  {value: 'ALL', label: t('demands.sprint.ALL')},
+  ...sprintOptions.value,
+]);
+
 const selectedPriorityFilter = ref<DemandPriority | 'ALL'>('ALL');
+const selectedSprintFilter = ref<Sprint | 'ALL'>('ALL');
 const boardColumns = computed(() => boardStatusOrder.map((status) => ({
   status,
   label: statusLabels.value[status],
@@ -751,6 +768,7 @@ const handleColumnScroll = (status: DemandStatus, event: Event) => {
 const applyFilters = () => {
   demandStore.statusFilter = null;
   demandStore.priorityFilter = selectedPriorityFilter.value === 'ALL' ? null : selectedPriorityFilter.value;
+  demandStore.sprintFilter = selectedSprintFilter.value === 'ALL' ? null : selectedSprintFilter.value;
   searchTerm.value = '';
   return loadDemands(0);
 };

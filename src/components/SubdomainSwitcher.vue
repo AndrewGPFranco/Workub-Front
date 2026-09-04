@@ -45,21 +45,26 @@ interface SubdomainOption {
   urlPhoto: string | null;
 }
 
-const props = defineProps<{
-  subdomains: Subdomain[];
-}>();
-
 const {t} = useLanguage();
 const subdomainStore = useSubdomainStore();
 
 const subdomainKey = (subdomain: Subdomain) => subdomain.id ?? subdomain.name;
-const subdomainOptions = computed<SubdomainOption[]>(() =>
-    subdomainStore.subdomains.map((subdomain) => ({
-      value: subdomainKey(subdomain),
-      label: subdomain.name,
-      urlPhoto: subdomain.urlPhoto ?? null,
-    })),
-);
+
+const subdomainOptions = computed<SubdomainOption[]>(() => {
+  const options = subdomainStore.subdomains.map((subdomain) => ({
+    value: subdomainKey(subdomain),
+    label: subdomain.name,
+    urlPhoto: subdomain.urlPhoto ?? null,
+  }));
+
+  options.push({
+    value: "",
+    label: "Não utilizar",
+    urlPhoto: null,
+  })
+  return options;
+});
+
 const selectedSubdomainKey = computed({
   get: () => subdomainStore.selectedSubdomainKey,
   set: (value: string | null) => subdomainStore.selectSubdomain(value),

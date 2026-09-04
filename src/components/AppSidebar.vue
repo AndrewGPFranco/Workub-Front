@@ -31,6 +31,7 @@
       <div class="navbar-actions">
         <SubdomainSwitcher :subdomains="subdomains" v-if="canAccess('SUBDOMAINS') && subdomains.length"/>
         <LanguageSelect/>
+        <Notifications />
         <ThemeToggle/>
         <span class="navbar-divider"/>
         <div class="profile-copy">
@@ -45,22 +46,23 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref} from 'vue';
+import router from '@/router';
 import {useRoute} from 'vue-router';
 import Button from 'primevue/button';
-import LanguageSelect from '@/components/LanguageSelect.vue';
-import SubdomainSwitcher from '@/components/SubdomainSwitcher.vue';
+import {computed, onMounted, ref} from 'vue';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 import {useLanguage} from '@/composables/use-language.ts';
+import Notifications from '@/components/Notifications.vue';
+import LanguageSelect from '@/components/LanguageSelect.vue';
+import SubdomainSwitcher from '@/components/SubdomainSwitcher.vue';
 import {
   getDefaultAuthorizedRouteName,
   hasStoredPlanResource,
   type PlanResource
 } from '@/composables/use-plan-resources.ts';
-import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
-import {useSubdomainStore} from "@/stores/subdomain-store.ts";
 import type {Subdomain} from "@/types/subdomain/Subdomain.ts";
+import {useSubdomainStore} from "@/stores/subdomain-store.ts";
 
 const route = useRoute();
 const {t} = useLanguage();

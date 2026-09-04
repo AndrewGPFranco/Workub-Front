@@ -92,7 +92,7 @@ const fetchNotifications = async () => {
 const toggleRead = async (index: number) => {
   const notification = notifications.value[index];
 
-  if (notification) {
+  if (notification && !notification.was_it_viewed) {
     await notificationStore.markAsRead(notification.id);
     await fetchNotifications();
   }

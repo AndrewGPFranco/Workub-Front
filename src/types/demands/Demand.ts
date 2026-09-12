@@ -2,11 +2,13 @@ export type DemandStatus = 'DONE' | 'PENDING' | 'BLOCKED' | 'ONGOING';
 
 export type DemandPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
-export enum Sprint {
-    CURRENT = 'CURRENT',
-    PAST = 'PAST',
-    FUTURE = 'FUTURE',
-}
+export type Sprint = string;
+
+export const Sprint = {
+    CURRENT: 'CURRENT',
+    PAST: 'PAST',
+    FUTURE: 'FUTURE',
+} as const;
 
 export interface RegisterObservation {
     textObservation: string;

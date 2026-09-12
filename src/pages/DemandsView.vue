@@ -1,6 +1,10 @@
 <template>
   <div id="page-top" class="demands-page">
     <AppSidebar/>
+    <SprintRegisterDialog v-model:visible="isSprintDialogVisible"/>
+    <DemandsToSprintDialog v-model:visible="isMoveSprintDialogVisible" :demands="demandStore.demands"
+                           :has-more="hasMoreSprintDemands" :loading-demands="isLoadingSprintDemands"
+                           @load-more="loadMoreSprintDemands" @saved="loadDemands(0)"/>
 
     <main class="workspace">
       <header class="desk-header">
@@ -34,8 +38,24 @@
                 @click="clearSearch"
             />
           </form>
-          <Button :label="t('demands.register')" icon="pi pi-plus" class="new-demand-button"
-                  @click="openDemandCreation"/>
+          <div class="demand-header-actions">
+            <span class="header-action">
+              <Button :aria-label="t('demands.moveToSprint')" icon="pi pi-arrow-right" outlined
+                      :disabled="demandStore.isLoading || !demandStore.demands.length"
+                      @click="isMoveSprintDialogVisible = true"/>
+              <span class="action-tooltip" aria-hidden="true">{{ t('demands.moveToSprint') }}</span>
+            </span>
+            <span class="header-action">
+              <Button :aria-label="t('demands.registerSprint')" icon="pi pi-calendar-plus" outlined
+                      @click="isSprintDialogVisible = true"/>
+              <span class="action-tooltip" aria-hidden="true">{{ t('demands.registerSprint') }}</span>
+            </span>
+            <span class="header-action">
+              <Button :aria-label="t('demands.register')" icon="pi pi-plus" class="new-demand-button"
+                      @click="openDemandCreation"/>
+              <span class="action-tooltip" aria-hidden="true">{{ t('demands.register') }}</span>
+            </span>
+          </div>
         </div>
       </header>
 
@@ -310,7 +330,9 @@
                   <label>
                     <span>{{ t('demands.sprint') }}</span>
                     <Select v-model="form.sprint" :options="sprintOptions" option-label="label"
-                            option-value="value" fluid/>
+                            option-value="value" :placeholder="t('demands.selectSprint')"
+                            :empty-message="t('demands.noSprints')"
+                            :loading="sprintStore.isLoading" fluid/>
                   </label>
                 </div>
               </div>
@@ -360,8 +382,8 @@
                 <span :class="['priority-mark', `priority-${selectedDemand.priority.toLowerCase()}`]">
                   {{ priorityLabels[selectedDemand.priority] }}
                 </span>
-                <span :class="['priority-mark', `sprint-${selectedDemand.sprint.toLowerCase()}`]">
-                  {{ sprintLabels[selectedDemand.sprint] }}
+                <span v-if="selectedDemand.sprint" class="priority-mark sprint-mark">
+                  {{ selectedDemand.sprint }}
                 </span>
               </div>
 
@@ -591,6 +613,8 @@
 
 <script setup lang="ts">
 import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch} from 'vue';
+import DemandsToSprintDialog from '@/components/DemandsToSprintDialog.vue';
+import SprintRegisterDialog from '@/components/SprintRegisterDialog.vue';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
@@ -601,13 +625,14 @@ import {useLanguage} from '@/composables/use-language.ts';
 import router from '@/router';
 import {useAuthStore} from '@/stores/auth-store.ts';
 import {useDemandStore} from '@/stores/demand-store.ts';
+import {useSprintStore} from '@/stores/sprint-store.ts';
 import {useSubdomainStore} from '@/stores/subdomain-store.ts';
 import {hasStoredPlanResource, type PlanResource} from '@/composables/use-plan-resources.ts';
 import {
   type Demand,
   type DemandPriority,
   type DemandStatus,
-  type EditDemand, Sprint
+  type EditDemand
 } from '@/types/demands/Demand.ts';
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 
@@ -620,10 +645,12 @@ type DemandForm = {
   observationToReview: string | null;
   observations: string[];
   finalizedAt: string | null;
-  sprint: Sprint;
+  sprint: string;
 };
 
 const toast = useToast();
+const isMoveSprintDialogVisible = ref(false);
+const isSprintDialogVisible = ref(false);
 const isSubmitting = ref(false);
 const isDeleting = ref(false);
 const isAddingObservation = ref(false);
@@ -640,6 +667,7 @@ const destinationSubdomainId = ref<string | null>(null);
 const changeSubdomainModal = ref<HTMLElement | null>(null);
 const authStore = useAuthStore();
 const demandStore = useDemandStore();
+const sprintStore = useSprintStore();
 const subdomainStore = useSubdomainStore();
 const canAccess = (resource: PlanResource) => hasStoredPlanResource(resource);
 const formCard = ref<HTMLElement | null>(null);
@@ -667,14 +695,14 @@ const priorityLabels = computed<Record<DemandPriority, string>>(() => ({
   URGENT: t('priority.URGENT'),
 }));
 
-const sprintLabels = computed<Record<Sprint, string>>(() => ({
-  PAST: t('demands.sprint.PAST'),
-  CURRENT: t('demands.sprint.CURRENT'),
-  FUTURE: t('demands.sprint.FUTURE'),
-}));
-
 const statusOptions = computed(() => Object.entries(statusLabels.value).map(([value, label]) => ({value, label})));
-const sprintOptions = computed(() => Object.entries(sprintLabels.value).map(([value, label]) => ({value, label})));
+const sprintOptions = computed(() => {
+  const options = sprintStore.sprints.map((value) => ({value, label: value}));
+  if (form.sprint && !options.some((opt) => opt.value === form.sprint)) {
+    options.unshift({value: form.sprint, label: form.sprint});
+  }
+  return options;
+});
 const priorityOptions = computed(() => Object.entries(priorityLabels.value).map(([value, label]) => ({value, label})));
 const priorityFilterOptions = computed(() => [
   {value: 'ALL', label: t('demands.allPriorities')},
@@ -683,11 +711,11 @@ const priorityFilterOptions = computed(() => [
 
 const sprintFilterOptions = computed(() => [
   {value: 'ALL', label: t('demands.sprint.ALL')},
-  ...sprintOptions.value,
+  ...sprintStore.sprints.map((sprint) => ({value: sprint, label: sprint})),
 ]);
 
 const selectedPriorityFilter = ref<DemandPriority | 'ALL'>('ALL');
-const selectedSprintFilter = ref<Sprint | 'ALL'>('ALL');
+const selectedSprintFilter = ref<string>('ALL');
 const boardColumns = computed(() => boardStatusOrder.map((status) => ({
   status,
   label: statusLabels.value[status],
@@ -708,7 +736,7 @@ const emptyForm = (): DemandForm => ({
   observationToReview: null,
   observations: [],
   finalizedAt: null,
-  sprint: Sprint.CURRENT
+  sprint: sprintStore.sprints[0] ?? '',
 });
 
 const form = reactive<DemandForm>(emptyForm());
@@ -755,6 +783,17 @@ const loadNextStatusPage = async (status: DemandStatus) => {
 
   if (result.isError)
     showErrorToast(toast, t('demands.loadError'));
+};
+
+const isLoadingSprintDemands = computed(() => demandStore.isLoading
+    || Object.values(demandStore.statusPages).some(page => page.isLoading));
+const hasMoreSprintDemands = computed(() => !isSearching.value && demandStore.canGoForward
+    && boardStatusOrder.some(status => demandStore.statusPages[status].canGoForward));
+const loadMoreSprintDemands = async () => {
+  if (isLoadingSprintDemands.value || !hasMoreSprintDemands.value) return;
+  await Promise.all(boardStatusOrder
+      .filter(status => demandStore.statusPages[status].canGoForward)
+      .map(status => loadNextStatusPage(status)));
 };
 
 const handleColumnScroll = (status: DemandStatus, event: Event) => {
@@ -870,6 +909,11 @@ const saveDemand = async () => {
   const demandId = editingDemandId.value;
   if (isSubmitting.value || !demandId)
     return;
+
+  if (!form.sprint) {
+    showErrorToast(toast, t('demands.sprintRequired'));
+    return;
+  }
 
   isSubmitting.value = true;
   const result = await demandStore.editDemand(demandId, toEditDemand());
@@ -1137,11 +1181,14 @@ const logout = async () => {
 
 watch(
     () => subdomainStore.selectedSubdomainId,
-    () => {
+    async () => {
       if (!canAccess('SUBDOMAINS') || isInitializingSubdomains.value)
         return;
 
       searchTerm.value = '';
+      selectedSprintFilter.value = 'ALL';
+      demandStore.sprintFilter = null;
+      await sprintStore.fetchSprints();
       void loadDemands(0);
     },
 );
@@ -1155,6 +1202,7 @@ onMounted(async () => {
     isInitializingSubdomains.value = false;
   }
 
+  await sprintStore.fetchSprints();
   await loadDemands();
   window.addEventListener('keydown', closeDeleteDialogOnEscape);
 });
@@ -1327,6 +1375,50 @@ h1 em {
   color: #69766f;
   font-size: 0.91rem;
   line-height: 1.65;
+}
+
+.demand-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-action {
+  position: relative;
+  display: inline-flex;
+}
+
+.header-action :deep(.p-button) {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 10px;
+}
+
+.action-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: min(240px, 65vw);
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: #183c30;
+  color: #fff;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 14%);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.header-action:hover .action-tooltip,
+.header-action:focus-within .action-tooltip {
+  visibility: visible;
+  opacity: 1;
 }
 
 .new-demand-button, .submit-button {
@@ -1825,6 +1917,10 @@ h2 {
 
 .status-done {
   color: #66813c;
+}
+
+.sprint-mark {
+  color: #377b67;
 }
 
 .sprint-past {

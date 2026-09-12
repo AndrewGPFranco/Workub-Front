@@ -59,7 +59,8 @@
               <label>
                 <span>{{ t('demands.sprint') }}</span>
                 <Select v-model="form.sprint" :options="sprintOptions" option-label="label" option-value="value"
-                        fluid/>
+                        :placeholder="t('demands.selectSprint')" :empty-message="t('demands.noSprints')"
+                        :loading="sprintStore.isLoading" fluid/>
               </label>
             </div>
 
@@ -102,24 +103,25 @@ import Textarea from 'primevue/textarea';
 import InputText from 'primevue/inputtext';
 import {useToast} from 'primevue/usetoast';
 import AppSidebar from '@/components/AppSidebar.vue';
-import {computed, onMounted, reactive, ref} from 'vue';
+import {computed, onMounted, reactive, ref, watch} from 'vue';
 import {useDemandStore} from '@/stores/demand-store.ts';
+import {useSprintStore} from '@/stores/sprint-store.ts';
 import {useLanguage} from '@/composables/use-language.ts';
 import {useSubdomainStore} from '@/stores/subdomain-store.ts';
 import {showErrorToast, showSuccessToast} from '@/utils/toast.ts';
 import {hasStoredPlanResource} from '@/composables/use-plan-resources.ts';
-import {type DemandPriority, type DemandStatus, type RegisterDemand, Sprint} from '@/types/demands/Demand.ts';
+import type {DemandPriority, DemandStatus, RegisterDemand} from '@/types/demands/Demand.ts';
 
 const route = useRoute();
 const toast = useToast();
 const demandStore = useDemandStore();
+const sprintStore = useSprintStore();
 const subdomainStore = useSubdomainStore();
 const {t} = useLanguage();
 const isSubmitting = ref(false);
 const canAccessSubdomains = hasStoredPlanResource('SUBDOMAINS');
 const statuses: DemandStatus[] = ['PENDING', 'ONGOING', 'BLOCKED', 'DONE'];
 const priorities: DemandPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
-const sprints: Sprint[] = [Sprint.CURRENT, Sprint.FUTURE, Sprint.PAST];
 const requestedStatus = typeof route.query.status === 'string' && statuses.includes(route.query.status as DemandStatus)
     ? route.query.status as DemandStatus
     : 'PENDING';
@@ -132,12 +134,18 @@ const form = reactive({
   priority: 'MEDIUM' as DemandPriority,
   observationToReview: null as string | null,
   observations: [] as string[],
-  sprint: Sprint.CURRENT
+  sprint: ''
 });
 
 const statusOptions = computed(() => statuses.map((value) => ({value, label: t(`status.${value}`)})));
 const priorityOptions = computed(() => priorities.map((value) => ({value, label: t(`priority.${value}`)})));
-const sprintOptions = computed(() => sprints.map((value) => ({value, label: t(`demands.sprint.${value}`)})));
+const sprintOptions = computed(() => {
+  const options = sprintStore.sprints.map((value) => ({value, label: value}));
+  if (form.sprint && !options.some((opt) => opt.value === form.sprint)) {
+    options.unshift({value: form.sprint, label: form.sprint});
+  }
+  return options;
+});
 const statusLabel = computed(() => t(`status.${form.status}`));
 
 const addObservation = () => form.observations.push('');
@@ -146,6 +154,11 @@ const removeObservation = (index: number) => form.observations.splice(index, 1);
 const saveDemand = async () => {
   if (isSubmitting.value)
     return;
+
+  if (!form.sprint) {
+    showErrorToast(toast, t('demands.sprintRequired'));
+    return;
+  }
 
   isSubmitting.value = true;
   const payload: RegisterDemand = {
@@ -170,9 +183,24 @@ const saveDemand = async () => {
   await router.push({name: 'Demands'});
 };
 
+watch(
+    () => subdomainStore.selectedSubdomainId,
+    async (newSubdomainId) => {
+      form.sprint = '';
+      await sprintStore.fetchSprints(newSubdomainId);
+      if (subdomainStore.selectedSubdomainId === newSubdomainId)
+        form.sprint = sprintStore.sprints[0] ?? '';
+    },
+);
+
 onMounted(async () => {
   if (canAccessSubdomains)
     await subdomainStore.fetchSubdomains();
+
+  await sprintStore.fetchSprints();
+  if (sprintStore.sprints.length > 0 && !form.sprint) {
+    form.sprint = sprintStore.sprints[0] ?? '';
+  }
 });
 </script>
 

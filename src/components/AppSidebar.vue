@@ -31,7 +31,7 @@
       <div class="navbar-actions">
         <SubdomainSwitcher :subdomains="subdomains" v-if="canAccess('SUBDOMAINS') && subdomains.length"/>
         <LanguageSelect/>
-        <Notifications />
+        <Notifications v-if="canAccess('NOTIFICATIONS')" />
         <ThemeToggle/>
         <span class="navbar-divider"/>
         <div class="profile-copy">

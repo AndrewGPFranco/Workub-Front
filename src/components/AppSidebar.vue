@@ -31,7 +31,6 @@
       <div class="navbar-actions">
         <SubdomainSwitcher :subdomains="subdomains" v-if="canAccess('SUBDOMAINS') && subdomains.length"/>
         <LanguageSelect/>
-        <Notifications v-if="canAccess('NOTIFICATIONS')" />
         <ThemeToggle/>
         <span class="navbar-divider"/>
         <div class="profile-copy">
@@ -52,7 +51,6 @@ import Button from 'primevue/button';
 import {computed, onMounted, ref} from 'vue';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 import {useLanguage} from '@/composables/use-language.ts';
-import Notifications from '@/components/Notifications.vue';
 import LanguageSelect from '@/components/LanguageSelect.vue';
 import SubdomainSwitcher from '@/components/SubdomainSwitcher.vue';
 import {

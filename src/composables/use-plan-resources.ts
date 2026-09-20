@@ -1,7 +1,7 @@
-export type PlanResource = 'DAILY' | 'DEMANDS' | 'FEEDBACK' | 'SUBDOMAINS' | 'NOTES' | 'NOTIFICATIONS';
+export type PlanResource = 'DAILY' | 'DEMANDS' | 'FEEDBACK' | 'SUBDOMAINS' | 'NOTES';
 
 const TOKEN_STORAGE_KEY = 'token';
-const RESOURCE_BY_ORDINAL: PlanResource[] = ['DAILY', 'DEMANDS', 'FEEDBACK', 'SUBDOMAINS', 'NOTES', 'NOTIFICATIONS'];
+const RESOURCE_BY_ORDINAL: PlanResource[] = ['DAILY', 'DEMANDS', 'FEEDBACK', 'SUBDOMAINS', 'NOTES'];
 
 const decodeBase64Url = (value: string) => {
     const base64 = value.replaceAll('-', '+').replaceAll('_', '/');
@@ -23,8 +23,8 @@ const normalizeResource = (resource: unknown): PlanResource | null => {
 };
 
 const isPlanResource = (resource: string): resource is PlanResource =>
-    resource === 'DAILY' || resource === 'DEMANDS' || resource === 'NOTIFICATIONS' ||
-    resource === 'FEEDBACK' || resource === 'SUBDOMAINS' || resource === 'NOTES';
+    resource === 'DAILY' || resource === 'DEMANDS' || resource === 'FEEDBACK' ||
+    resource === 'SUBDOMAINS' || resource === 'NOTES';
 
 export const getStoredPlanResources = (): PlanResource[] => {
     const token = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -65,8 +65,6 @@ export const getDefaultAuthorizedRouteName = () => {
     if (resources.includes('SUBDOMAINS')) return 'Subdomain Register';
 
     if (resources.includes('NOTES')) return 'Notes';
-
-    if (resources.includes('NOTIFICATIONS')) return 'Notifications';
 
     return 'Access Denied';
 };

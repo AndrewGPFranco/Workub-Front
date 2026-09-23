@@ -88,5 +88,33 @@ export const useNoteStore = defineStore('note-store', {
                 return new ResponseAPI(getApiErrorStatus(error), '');
             }
         },
+        async exportNote(idNote: string): Promise<boolean> {
+            try {
+                const response = await axios.get<Blob>(`${this.url}/api/v1/notes/export`, {
+                    headers: this.authorizationHeader(),
+                    params: {idNota: idNote},
+                    responseType: 'blob',
+                });
+
+                const disposition = response.headers['content-disposition'] as string | undefined;
+                const filename = disposition?.match(/filename="([^"]+)"/i)?.[1];
+                if (!filename) {
+                    throw new Error('O backend não informou o nome do arquivo exportado.');
+                }
+
+                const objectUrl = URL.createObjectURL(response.data);
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+                return true;
+            } catch (error) {
+                console.error(error);
+                return false;
+            }
+        },
     }
 });

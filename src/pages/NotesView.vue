@@ -32,6 +32,16 @@
             <i class="pi pi-trash"/>
           </button>
 
+          <button
+              type="button"
+              class="btn-export-note"
+              :aria-label="t('notes.export')"
+              :title="t('notes.export')"
+              @click="exportNote(note)"
+          >
+            <i class="pi pi-file-export"/>
+          </button>
+
           <router-link :to="{path: `/notes/new/${note.id}`}" class="note-card-link">
             <div class="note-card-header">
               <h2 class="note-card-title">{{ note.title || t('notes.untitled') }}</h2>
@@ -144,6 +154,11 @@ const deleteNote = async (note: Note): Promise<void> => {
   }
 
   showErrorToast(toast, t('notes.deleteError'));
+}
+
+const exportNote = async (note: Note): Promise<void> => {
+  if (!await noteStore.exportNote(note.id))
+    showErrorToast(toast, t('notes.exportError'));
 }
 
 async function fetchNotes() {
@@ -315,10 +330,10 @@ watch(
   cursor: pointer;
 }
 
-.btn-delete-note {
+.btn-delete-note,
+.btn-export-note {
   position: absolute;
   z-index: 1;
-  right: 16px;
   bottom: 14px;
   display: inline-flex;
   align-items: center;
@@ -331,8 +346,24 @@ watch(
   background: transparent;
   color: var(--wh-text-muted);
   cursor: pointer;
-  opacity: 0;
   transition: all 200ms ease;
+}
+
+.btn-delete-note {
+  right: 16px;
+  opacity: 0;
+}
+
+.btn-export-note {
+  right: 52px;
+  background: var(--wh-primary-soft);
+  color: var(--wh-primary);
+}
+
+.btn-export-note:hover,
+.btn-export-note:focus-visible {
+  background: var(--wh-primary);
+  color: var(--wh-primary-contrast);
 }
 
 .note-card:hover .btn-delete-note,
@@ -402,6 +433,7 @@ watch(
   align-items: center;
   margin-top: 18px;
   padding-top: 13px;
+  padding-right: 74px;
   border-top: 1px solid var(--wh-border);
 }
 
